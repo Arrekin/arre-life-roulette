@@ -91,3 +91,15 @@ offset_right = 163.0
 offset_bottom = 495.0
 grow_horizontal = 2
 text = "Add Item"
+
+[node name="DialogCloseButton" type="Button" parent="UI/AddItemView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 401.0
+offset_top = 30.0
+offset_right = 528.0
+offset_bottom = 71.0
+grow_horizontal = 2
+text = "Close"

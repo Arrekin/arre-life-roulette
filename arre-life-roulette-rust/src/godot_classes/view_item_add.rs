@@ -16,6 +16,7 @@ pub struct ItemAddView {
     name_line_edit: Option<Gd<LineEdit>>,
     description_text_edit: Option<Gd<TextEdit>>,
     add_button: Option<Gd<Button>>,
+    close_button: Option<Gd<Button>>,
 }
 
 #[godot_api]
@@ -34,6 +35,11 @@ impl ItemAddView {
 
         print(&["ItemAddButton clicked! ".to_variant(), name.to_variant(), description.to_variant()]);
     }
+
+    #[func]
+    fn on_dialog_close_button_up(&mut self) {
+        self.set_visible(false);
+    }
 }
 
 #[godot_api]
@@ -44,16 +50,25 @@ impl GodotExt for ItemAddView {
             name_line_edit: None,
             description_text_edit: None,
             add_button: None,
+            close_button: None,
         }
     }
     fn ready(&mut self) {
         self.name_line_edit = self.base.try_get_node_as("ItemNameLineEdit");
         self.description_text_edit = self.base.try_get_node_as("ItemDescriptionTextEdit");
-        self.add_button = self.base.try_get_node_as::<Button>("ItemAddButton");
+        self.add_button = self.base.try_get_node_as("ItemAddButton");
         self.add_button.as_mut().map(|mut button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_add_item_button_up"),
+                0,
+            )
+        });
+        self.close_button = self.base.try_get_node_as("DialogCloseButton");
+        self.close_button.as_mut().map(|mut button| {
+            button.connect(
+                "button_up".into(),
+                Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
                 0,
             )
         });
