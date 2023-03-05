@@ -29,8 +29,7 @@ custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Tags"
 
-[node name="ItemsView" type="Control" parent="UI"]
-layout_mode = 3
+[node name="ItemsView" type="ItemsView" parent="UI"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -38,7 +37,7 @@ offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="AddItemButton" type="Button" parent="UI/ItemsView"]
+[node name="ItemAddDialogButton" type="Button" parent="UI/ItemsView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -50,13 +49,13 @@ offset_bottom = 570.0
 grow_horizontal = 2
 text = "Add Item"
 
-[node name="AddItemView" type="ItemAddView" parent="UI"]
+[node name="ItemAddView" type="ItemAddView" parent="UI"]
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.997
 offset_bottom = -0.0560303
 
-[node name="ItemNameLineEdit" type="LineEdit" parent="UI/AddItemView"]
+[node name="ItemNameLineEdit" type="LineEdit" parent="UI/ItemAddView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -68,7 +67,7 @@ offset_bottom = 166.0
 grow_horizontal = 2
 placeholder_text = "Item Name"
 
-[node name="ItemDescriptionTextEdit" type="TextEdit" parent="UI/AddItemView"]
+[node name="ItemDescriptionTextEdit" type="TextEdit" parent="UI/ItemAddView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -80,7 +79,7 @@ offset_bottom = 429.0
 grow_horizontal = 2
 placeholder_text = "Item Description"
 
-[node name="ItemAddButton" type="Button" parent="UI/AddItemView"]
+[node name="ItemAddButton" type="Button" parent="UI/ItemAddView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -92,7 +91,7 @@ offset_bottom = 495.0
 grow_horizontal = 2
 text = "Add Item"
 
-[node name="DialogCloseButton" type="Button" parent="UI/AddItemView"]
+[node name="DialogCloseButton" type="Button" parent="UI/ItemAddView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
