@@ -1,17 +1,17 @@
 use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Object};
+use godot::engine::{Node};
 use godot::prelude::*;
 use rusqlite::Connection;
 use crate::db_init::initialize_database;
 
 #[derive(GodotClass)]
-#[class(base=Object)]
+#[class(base=Node)]
 pub struct Globals {
     #[base]
-    base: Base<Object>,
+    base: Base<Node>,
 
     // db connection
-    connection: Connection
+    pub connection: Connection
 }
 
 #[godot_api]

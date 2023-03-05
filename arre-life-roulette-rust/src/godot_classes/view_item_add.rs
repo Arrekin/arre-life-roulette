@@ -2,6 +2,9 @@ use godot::builtin::{Callable, ToVariant};
 use godot::engine::{Panel, LineEdit, TextEdit, Button, NodeExt, Engine};
 use godot::obj::EngineClass;
 use godot::prelude::*;
+use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::utils::get_singleton;
+use crate::item::Item;
 
 #[derive(GodotClass)]
 #[class(base=Panel)]
@@ -19,12 +22,17 @@ pub struct ItemAddView {
 impl ItemAddView {
     #[func]
     fn on_add_item_button_up(&mut self) {
+        print(&["In function! ".to_variant()]);
         let name = self.name_line_edit.as_ref().map(|line_edit| line_edit.get_text()).unwrap();
         let description = self.description_text_edit.as_ref().map(|text_edit| text_edit.get_text()).unwrap();
 
-        //let globals = Engine::singleton().get_singleton();
+        let globals = get_singleton::<Globals>("Globals");
+        let connection = &globals.bind().connection;
+        print(&["Got singleton by name! ".to_variant()]);
+        Item::create_new(connection, name.to_string(), &Some(description.to_string())).unwrap();
 
-        print(&["ItemAddButton clicked!".to_variant(), name.to_variant(), description.to_variant()]);
+
+        print(&["ItemAddButton clicked! ".to_variant(), name.to_variant(), description.to_variant()]);
     }
 }
 
