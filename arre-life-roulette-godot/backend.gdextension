@@ -1,0 +1,5 @@
+[configuration]
+entry_symbol = "gdextension_rust_init"
+
+[libraries]
+windows.64 = "res://../arre-life-roulette-rust/target/debug/arre_life_roulette_rust.dll"

@@ -1,0 +1,16 @@
+[package]
+name = "arre-life-roulette-rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+godot = { git = "https://github.com/godot-rust/gdextension", branch = "master" }
+rusqlite = { version = "0.28.0", features = ["bundled"] }
+rand = "0.8.5"
+
+[dev-dependencies]
+rstest = "0.16.0"
+serial_test = "1.0.0"
