@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://ccl2262542mx2"]
+[gd_scene load_steps=2 format=3 uid="uid://ccl2262542mx2"]
+
+[ext_resource type="PackedScene" uid="uid://cu0b5v1rc2bp3" path="res://ItemSelectionButton.tscn" id="1_rxxvn"]
 
 [node name="Root" type="Node2D"]
 
@@ -49,7 +51,30 @@ offset_bottom = 570.0
 grow_horizontal = 2
 text = "Add Item"
 
+[node name="ItemsListScrollContainer" type="ScrollContainer" parent="UI/ItemsView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -561.0
+offset_top = 99.0
+offset_right = 561.0
+offset_bottom = 498.0
+grow_horizontal = 2
+
+[node name="ItemsListGridContainer" type="GridContainer" parent="UI/ItemsView/ItemsListScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4
+
+[node name="ItemSelectionButton" parent="UI/ItemsView/ItemsListScrollContainer/ItemsListGridContainer" instance=ExtResource("1_rxxvn")]
+layout_mode = 2
+
 [node name="ItemAddView" type="ItemAddView" parent="UI"]
+visible = false
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.997

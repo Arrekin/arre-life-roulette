@@ -7,16 +7,16 @@ pub type ItemId = Id<Item>;
 pub struct Item {
     pub id: ItemId,
     pub name: String,
-    pub description: Option<String>,
+    pub description: String,
     pub is_suspended: bool,
     pub is_finished: bool,
     pub tags: Vec<ItemTag>,
 }
 
 impl Item {
-    pub fn create_new(conn: &Connection, name: impl AsRef<str>, description: &Option<impl AsRef<str>>) -> Result<Item> {
+    pub fn create_new(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> Result<Item> {
         let name = name.as_ref();
-        let description = description.as_ref().map(|d| d.as_ref());
+        let description = description.as_ref();
         conn.execute(
         "INSERT INTO items (name, description) VALUES (?1, ?2)",
         (name, description),
@@ -57,13 +57,13 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("Glorious Item", None)]
-    #[case("Glorious Item", Some("Glorious Item Description".into()))]
+    #[case("Glorious Item", "")]
+    #[case("Glorious Item", "Glorious Item Description".into())]
     fn create_item_successful_then_delete(
         db_connection: &Connection,
         mut test_factory: TestFactory,
         #[case] item_name: String,
-        #[case] item_description: Option<String>,
+        #[case] item_description: String,
     ) {
         let item = Item::create_new(db_connection, &item_name, &item_description);
         assert!(item.is_ok(), "Could not create item, error: {:?}", item.err().unwrap());
