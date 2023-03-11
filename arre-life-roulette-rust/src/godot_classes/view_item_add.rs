@@ -41,7 +41,7 @@ impl ItemAddView {
 
     #[func]
     fn on_dialog_close_button_up(&mut self) {
-        self.set_visible(false);
+        self.hide();
         self.emit_signal("dialog_closed".into(), &[]);
     }
 }

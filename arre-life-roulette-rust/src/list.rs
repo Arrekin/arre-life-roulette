@@ -9,14 +9,14 @@ pub type ListId = Id<List>;
 pub struct List {
     pub id: ListId,
     pub name: String,
-    pub description: Option<String>,
+    pub description: String,
     pub items: Vec<Item>,
 }
 
 impl List {
-    pub fn create_new(conn: &Connection, name: impl AsRef<str>, description: &Option<impl AsRef<str>>) -> Result<List> {
+    pub fn create_new(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> Result<List> {
         let name = name.as_ref();
-        let description = description.as_ref().map(|d| d.as_ref());
+        let description = description.as_ref();
         conn.execute(
         "INSERT INTO lists (name, description) VALUES (?1, ?2)",
         (name, description),
@@ -140,7 +140,7 @@ mod tests {
 
     #[rstest]
     fn list_add_remove_items(db_connection: &Connection, mut test_factory: TestFactory) {
-        let mut list = List::create_new(db_connection, "Glorious List", &None::<&str>).unwrap();
+        let mut list = List::create_new(db_connection, "Glorious List", "").unwrap();
         let start_items = test_factory.create_items(5);
         let first_item = start_items[0].clone();
         test_factory.assert_items_number(5);

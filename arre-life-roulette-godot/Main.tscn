@@ -1,12 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://ccl2262542mx2"]
-
-[ext_resource type="PackedScene" uid="uid://cu0b5v1rc2bp3" path="res://ItemSelectionButton.tscn" id="1_rxxvn"]
+[gd_scene format=3 uid="uid://ccl2262542mx2"]
 
 [node name="Root" type="Node2D"]
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI"]
+[node name="TabSelectionHBoxContainer" type="TabViewSelector" parent="UI"]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -16,17 +14,17 @@ offset_right = 229.0
 offset_bottom = 68.0
 grow_horizontal = 2
 
-[node name="Items" type="Button" parent="UI/HBoxContainer"]
+[node name="ItemsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Items"
 
-[node name="Lists" type="Button" parent="UI/HBoxContainer"]
+[node name="ListsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Lists"
 
-[node name="Tags" type="Button" parent="UI/HBoxContainer"]
+[node name="TagsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 text = "Tags"
@@ -35,6 +33,7 @@ text = "Tags"
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 83.0
 offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -44,10 +43,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -41.0
-offset_top = 520.0
-offset_right = 74.0
-offset_bottom = 570.0
+offset_left = -59.0
+offset_top = 475.0
+offset_right = 56.0
+offset_bottom = 525.0
 grow_horizontal = 2
 text = "Add Item"
 
@@ -57,9 +56,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -561.0
-offset_top = 99.0
+offset_top = -2.0
 offset_right = 561.0
-offset_bottom = 498.0
+offset_bottom = 453.0
 grow_horizontal = 2
 
 [node name="ItemsListGridContainer" type="GridContainer" parent="UI/ItemsView/ItemsListScrollContainer"]
@@ -70,8 +69,45 @@ theme_override_constants/h_separation = 3
 theme_override_constants/v_separation = 3
 columns = 4
 
-[node name="ItemSelectionButton" parent="UI/ItemsView/ItemsListScrollContainer/ItemsListGridContainer" instance=ExtResource("1_rxxvn")]
+[node name="ListsView" type="ListsView" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 81.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ListAddDialogButton" type="Button" parent="UI/ListsView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -57.0
+offset_top = 478.0
+offset_right = 58.0
+offset_bottom = 528.0
+grow_horizontal = 2
+text = "Add List"
+
+[node name="ListsListScrollContainer" type="ScrollContainer" parent="UI/ListsView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -561.0
+offset_right = 561.0
+offset_bottom = 458.0
+grow_horizontal = 2
+
+[node name="ListsListGridContainer" type="GridContainer" parent="UI/ListsView/ListsListScrollContainer"]
 layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4
 
 [node name="ItemAddView" type="ItemAddView" parent="UI"]
 visible = false

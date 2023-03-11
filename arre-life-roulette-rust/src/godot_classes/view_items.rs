@@ -32,7 +32,7 @@ pub struct ItemsView {
 impl ItemsView {
     #[func]
     fn on_item_add_button_up(&mut self) {
-        self.item_add_view.as_mut().map(|mut view| view.bind_mut().set_visible(true));
+        self.item_add_view.as_mut().map(|mut view| view.bind_mut().show());
     }
     #[func]
     fn refresh_items_list(&mut self) {
@@ -48,15 +48,15 @@ impl ItemsView {
         // Clear old and create a button for each item
         self.items_grid_elements.drain(..).for_each(|mut item| item.queue_free());
         self.items_grid_elements.extend(
-            self.items.iter().map(|item| {
-                    let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_INSTANCE).unwrap();
-                    self.items_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
-                    let mut button = instance.cast::<Button>();
-                    button.set_text(item.name.clone().into());
-                    button.set_tooltip_text(item.description.clone().into());
-                    button
-                })
-            );
+        self.items.iter().map(|item| {
+                let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
+                self.items_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
+                let mut button = instance.cast::<Button>();
+                button.set_text(item.name.clone().into());
+                button.set_tooltip_text(item.description.clone().into());
+                button
+            })
+        );
 
     }
 }
@@ -98,5 +98,23 @@ impl GodotExt for ItemsView {
         if self.is_visible() {
             self.refresh_items_list();
         }
+
+        // Get singleton and connect to global signals(show / hide)
+        let mut globals = get_singleton::<Globals>("Globals");
+        globals.bind_mut().connect(
+            "item_view_tab_selected".into(),
+            Callable::from_object_method(self.base.share(), "show"),
+            0,
+        );
+        globals.bind_mut().connect(
+            "list_view_tab_selected".into(),
+            Callable::from_object_method(self.base.share(), "hide"),
+            0,
+        );
+        globals.bind_mut().connect(
+            "tag_view_tab_selected".into(),
+            Callable::from_object_method(self.base.share(), "hide"),
+            0,
+        );
     }
 }
