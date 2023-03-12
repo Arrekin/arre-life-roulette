@@ -56,7 +56,7 @@ impl TestFactory<'_> {
             let item = Item::create_new(
                 self.connection,
                 format!("Item #{}", self.items_count),
-                &Some(format!("Item #{} description", self.items_count)),
+                format!("Item #{} description", self.items_count),
             ).unwrap();
             self.created_items.push(item.id);
             self.items_count += 1;

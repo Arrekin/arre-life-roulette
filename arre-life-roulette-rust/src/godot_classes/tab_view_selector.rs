@@ -6,7 +6,7 @@ use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_item_add::ItemAddView;
+use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::item::Item;
 use crate::list::List;
 

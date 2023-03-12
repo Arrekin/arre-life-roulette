@@ -18,7 +18,7 @@ impl Item {
         let name = name.as_ref();
         let description = description.as_ref();
         conn.execute(
-        "INSERT INTO items (name, description) VALUES (?1, ?2)",
+        "INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, false, false)",
         (name, description),
         )?;
         let mut stmt = conn.prepare("
@@ -42,15 +42,51 @@ impl Item {
         })
     }
 
+    /// Updates base properties. Does not manage relations
+    pub fn update(&mut self, conn: &Connection) -> Result<()> {
+        conn.execute("
+            UPDATE items
+            SET name = ?1, description = ?2, is_suspended = ?3, is_finished = ?4
+            WHERE item_id = ?5
+            ", (&self.name, &self.description, &self.is_suspended, &self.is_finished, self.id),
+        )?;
+        Ok(())
+    }
+
+    pub fn load(conn: &Connection, id: impl Into<ItemId>) -> Result<Item> {
+        let mut stmt = conn.prepare("
+            SELECT item_id, name, description, is_suspended, is_finished
+            FROM items
+            WHERE item_id = ?1
+        ")?;
+        Ok(stmt.query_row([id.into()], |row| {
+            Item::from_row(row)
+        })?)
+    }
+
     pub fn delete(&self, conn: &Connection) -> Result<()> {
         conn.execute("DELETE FROM items WHERE item_id = ?1", (self.id,))?;
         Ok(())
     }
 }
 
+impl Default for Item {
+    fn default() -> Self {
+        Self {
+            id: ItemId::new(0),
+            name: String::new(),
+            description: String::new(),
+            is_suspended: false,
+            is_finished: false,
+            tags: vec![],
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Debug;
     use rstest::*;
     use rusqlite::Connection;
     use crate::test_fixtures::{db_connection, TestFactory, test_factory};
@@ -58,7 +94,7 @@ mod tests {
 
     #[rstest]
     #[case("Glorious Item", "")]
-    #[case("Glorious Item", "Glorious Item Description".into())]
+    #[case("Glorious Item", "Glorious Item Description")]
     fn create_item_successful_then_delete(
         db_connection: &Connection,
         mut test_factory: TestFactory,
@@ -85,5 +121,61 @@ mod tests {
         item.delete(&db_connection).unwrap();
         test_factory.assert_item_exist(&item, false);
         test_factory.assert_items_number(0);
+    }
+
+    #[rstest]
+    #[case("Glorious Item", "", false, false)]
+    #[case("Glorious Item", "Glorious Item Description", true, true)]
+    fn update_item(
+        db_connection: &Connection,
+        mut test_factory: TestFactory,
+        #[case] expected_item_name: String,
+        #[case] expected_item_description: String,
+        #[case] expected_is_suspended: bool,
+        #[case] expected_is_finished: bool,
+    ) {
+        let mut item = test_factory.create_items(1).pop().unwrap();
+        item.name = expected_item_name.clone();
+        item.description = expected_item_description.clone();
+        item.is_suspended = expected_is_suspended;
+        item.is_finished = expected_is_finished;
+        item.update(&db_connection).unwrap();
+        let item = Item::load(db_connection, item.id).unwrap();
+        assert_eq!(
+            item.name, expected_item_name,
+            "Item name is wrong. Expected {:?}, got {:?}",
+            expected_item_name, item.name
+        );
+        assert_eq!(
+            item.description, expected_item_description,
+            "Item description is wrong. Expected {:?}, got {:?}",
+            expected_item_description, item.description
+        );
+        assert_eq!(item.is_suspended, expected_is_suspended, "Item suspended is wrong");
+        assert_eq!(item.is_finished, expected_is_finished, "Item finished is wrong");
+    }
+
+    #[rstest]
+    #[case(ItemId::new(2))]
+    #[case(2i64)]
+    fn load_item_by_id(
+        db_connection: &Connection,
+        mut test_factory: TestFactory,
+        #[case] item_id: impl Into<ItemId> + Debug + Clone,
+    ) {
+        // create 3 items, get the second one by id and compare its properties
+        test_factory.create_items(3);
+        let item = Item::load(db_connection, item_id.clone()).unwrap();
+        let expected_item_id = *item_id.into();
+        assert_eq!(
+            *item.id, expected_item_id,
+            "Item id is wrong. Expected {:?}, got {:?}",
+            expected_item_id, item.id
+        );
+        // assert_eq!(
+        //     item.name, "Item #{1}",
+        //     "Item name is wrong. Expected {:?}, got {:?}",
+        //     "Item #{1}", item.name
+        // );
     }
 }

@@ -111,12 +111,12 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("Glorious List", None)]
-    #[case("Glorious List2", Some("Glorious List Description".into()))]
+    #[case("Glorious List", "")]
+    #[case("Glorious List2", "Glorious List Description")]
     fn create_list_successful_then_delete(
         db_connection: &Connection,
         #[case] list_name: String,
-        #[case] list_description: Option<String>
+        #[case] list_description: String,
     ) {
         let list = List::create_new(db_connection, &list_name, &list_description);
         assert!(list.is_ok(), "Could not create item, error: {:?}", list.err().unwrap());

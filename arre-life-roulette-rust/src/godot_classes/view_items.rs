@@ -2,11 +2,11 @@ use godot::builtin::{Callable, ToVariant};
 use godot::engine::{Control,  Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
-use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::item_button::ItemSelectionButton;
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_item_add::ItemAddView;
+use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::item::Item;
 
 #[derive(GodotClass)]
@@ -19,10 +19,10 @@ pub struct ItemsView {
     item_selection_button: Gd<PackedScene>,
 
     // cached UI elements
-    item_add_button: Option<Gd<Button>>,
-    item_add_view: Option<Gd<ItemAddView>>,
-    items_grid: Option<Gd<GridContainer>>,
-    items_grid_elements: Vec<Gd<Button>>,
+    pub item_add_button: Option<Gd<Button>>,
+    pub item_modify_view: Option<Gd<ItemModifyView>>,
+    pub items_grid: Option<Gd<GridContainer>>,
+    pub items_grid_elements: Vec<Gd<ItemSelectionButton>>,
 
     // state
     items: Vec<Item>,
@@ -32,7 +32,19 @@ pub struct ItemsView {
 impl ItemsView {
     #[func]
     fn on_item_add_button_up(&mut self) {
-        self.item_add_view.as_mut().map(|mut view| view.bind_mut().show());
+        self.item_modify_view.as_mut().map(|mut view| {
+            let mut view = view.bind_mut();
+            view.set_mode_add();
+            view.show();
+        });
+    }
+    #[func]
+    fn on_item_selection_button_up(&mut self, item_selection_button: Gd<ItemSelectionButton>) {
+        self.item_modify_view.as_mut().map(|mut view| {
+            let mut view = view.bind_mut();
+            view.set_mode_edit(item_selection_button.bind().item.clone());
+            view.show();
+        });
     }
     #[func]
     fn refresh_items_list(&mut self) {
@@ -46,18 +58,20 @@ impl ItemsView {
         self.items = rows.map(|row| row.unwrap()).collect();
 
         // Clear old and create a button for each item
-        self.items_grid_elements.drain(..).for_each(|mut item| item.queue_free());
+        self.items_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
         self.items_grid_elements.extend(
-        self.items.iter().map(|item| {
+        self.items.iter().map(
+            |item| {
                 let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
                 self.items_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
-                let mut button = instance.cast::<Button>();
-                button.set_text(item.name.clone().into());
-                button.set_tooltip_text(item.description.clone().into());
+                let mut button = instance.cast::<ItemSelectionButton>();
+                {
+                    let mut button = button.bind_mut();
+                    button.set_item(item.clone());
+                }
                 button
             })
         );
-
     }
 }
 
@@ -69,7 +83,7 @@ impl GodotExt for ItemsView {
             item_selection_button: load("res://ItemSelectionButton.tscn"),
 
             item_add_button: None,
-            item_add_view: None,
+            item_modify_view: None,
             items_grid: None,
             items_grid_elements: vec![],
 
@@ -85,8 +99,8 @@ impl GodotExt for ItemsView {
                 0,
             );
         });
-        self.item_add_view = self.base.try_get_node_as("../ItemAddView");
-        self.item_add_view.as_mut().map(|mut view| {
+        self.item_modify_view = self.base.try_get_node_as("../ItemModifyView");
+        self.item_modify_view.as_mut().map(|mut view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
                 Callable::from_object_method(self.base.share(), "refresh_items_list"),
