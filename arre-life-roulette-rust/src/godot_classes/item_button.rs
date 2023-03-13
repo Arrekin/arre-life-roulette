@@ -41,7 +41,7 @@ impl ItemSelectionButton {
 
     pub fn set_item(&mut self, item: Item) {
         self.item = item;
-        self.refresh_display()
+        self.refresh_display();
     }
 }
 

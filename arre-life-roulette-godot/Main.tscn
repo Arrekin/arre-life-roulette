@@ -163,3 +163,115 @@ offset_right = 528.0
 offset_bottom = 71.0
 grow_horizontal = 2
 text = "Close"
+
+[node name="ListModifyView" type="ListModifyView" parent="UI"]
+offset_right = 1153.0
+offset_bottom = 652.0
+
+[node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -365.5
+offset_top = 86.0
+offset_right = 366.5
+offset_bottom = 124.0
+grow_horizontal = 2
+placeholder_text = "Item Name"
+
+[node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -361.5
+offset_top = 135.0
+offset_right = 370.5
+offset_bottom = 205.0
+grow_horizontal = 2
+placeholder_text = "Item Description"
+
+[node name="ListApplyButton" type="Button" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -165.5
+offset_top = 567.0
+offset_right = 163.5
+offset_bottom = 608.0
+grow_horizontal = 2
+text = "Add Item"
+
+[node name="DialogCloseButton" type="Button" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 401.0
+offset_top = 30.0
+offset_right = 528.0
+offset_bottom = 71.0
+grow_horizontal = 2
+text = "Close"
+
+[node name="HSeparator" type="HSeparator" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -576.5
+offset_top = 214.0
+offset_right = 575.5
+offset_bottom = 243.0
+grow_horizontal = 2
+
+[node name="ItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -562.5
+offset_top = 236.0
+offset_right = 559.5
+offset_bottom = 376.0
+grow_horizontal = 2
+
+[node name="ItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ItemsInScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4
+
+[node name="HSeparator2" type="HSeparator" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -575.5
+offset_top = 373.0
+offset_right = 581.5
+offset_bottom = 406.0
+grow_horizontal = 2
+
+[node name="ItemsOutScrollContainer2" type="ScrollContainer" parent="UI/ListModifyView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -564.5
+offset_top = 401.0
+offset_right = 557.5
+offset_bottom = 541.0
+grow_horizontal = 2
+
+[node name="ItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ItemsOutScrollContainer2"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4

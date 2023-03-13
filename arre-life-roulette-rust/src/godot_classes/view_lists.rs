@@ -86,7 +86,7 @@ impl GodotExt for ListsView {
                 0,
             );
         });
-        self.list_add_view = self.base.try_get_node_as("../ListAddView");
+        self.list_add_view = self.base.try_get_node_as("../ListModifyView");
         self.list_add_view.as_mut().map(|mut view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
