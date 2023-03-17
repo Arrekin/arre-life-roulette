@@ -5,6 +5,8 @@ use crate::utils::Id;
 pub type ItemId = Id<Item>;
 #[derive(Debug, Clone)]
 pub struct Item {
+    pub is_new: bool,
+
     pub id: ItemId,
     pub name: String,
     pub description: String,
@@ -33,6 +35,8 @@ impl Item {
     }
     pub fn from_row(row: &Row) -> Result<Item> {
         Ok(Item {
+            is_new: false,
+
             id: row.get(0)?,
             name: row.get(1)?,
             description: row.get(2)?,
@@ -43,13 +47,21 @@ impl Item {
     }
 
     /// Updates base properties. Does not manage relations
-    pub fn update(&mut self, conn: &Connection) -> Result<()> {
-        conn.execute("
+    pub fn save(&mut self, conn: &Connection) -> Result<()> {
+        if self.is_new {
+            conn.execute(
+            "INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, false, false)",
+            (&self.name, &self.description),
+            )?;
+        } else {
+            conn.execute("
             UPDATE items
             SET name = ?1, description = ?2, is_suspended = ?3, is_finished = ?4
             WHERE item_id = ?5
             ", (&self.name, &self.description, &self.is_suspended, &self.is_finished, self.id),
-        )?;
+            )?;
+        }
+        self.is_new = false;
         Ok(())
     }
 
@@ -84,6 +96,8 @@ impl Item {
 impl Default for Item {
     fn default() -> Self {
         Self {
+            is_new: true,
+
             id: ItemId::new(0),
             name: String::new(),
             description: String::new(),
@@ -150,7 +164,7 @@ mod tests {
         item.description = expected_item_description.clone();
         item.is_suspended = expected_is_suspended;
         item.is_finished = expected_is_finished;
-        item.update(&db_connection).unwrap();
+        item.save(&db_connection).unwrap();
         let item = Item::load(db_connection, item.id).unwrap();
         assert_eq!(
             item.name, expected_item_name,
@@ -183,6 +197,7 @@ mod tests {
             "Item id is wrong. Expected {:?}, got {:?}",
             expected_item_id, item.id
         );
+        assert_eq!(item.is_new, false, "Item claims to be new");
     }
 
     #[rstest]

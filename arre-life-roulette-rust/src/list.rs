@@ -5,8 +5,12 @@ use crate::utils::Id;
 
 pub type ListId = Id<List>;
 
+/// A list is a collection of items.
+/// If `is_new` is true, the id field is invalid as we had not asked yet the DB to assign a new id.
 #[derive(Debug)]
 pub struct List {
+    pub is_new: bool, // Whether the list is saved in DB
+
     pub id: ListId,
     pub name: String,
     pub description: String,
@@ -33,6 +37,8 @@ impl List {
     }
     pub fn from_row(row: &Row) -> Result<List> {
         Ok(List {
+            is_new: false,
+
             id: row.get(0)?,
             name: row.get(1)?,
             description: row.get(2)?,
@@ -53,6 +59,9 @@ impl List {
     }
 
     pub fn load_items(&mut self, conn: &Connection) -> Result<()> {
+        if self.is_new {
+            return Ok(());
+        }
         let mut stmt = conn.prepare("
             SELECT item_id, name, description
             FROM items i
@@ -68,6 +77,9 @@ impl List {
     }
 
     pub fn get_items_not_on_list(&self, conn: &Connection) -> Result<Vec<Item>> {
+        if self.is_new {
+            return Ok(Item::get_all(conn)?)
+        }
         let mut stmt = conn.prepare("
             SELECT item_id, name, description
             FROM items i
@@ -83,12 +95,20 @@ impl List {
     }
 
     /// Updates base properties. Does not manage relations
-    pub fn update(&self, conn: &Connection) -> Result<()> {
-        conn.execute("
+    pub fn save(&mut self, conn: &Connection) -> Result<()> {
+        if self.is_new {
+            conn.execute(
+            "INSERT INTO lists (name, description) VALUES (?1, ?2)",
+            (&self.name, &self.description),
+            )?;
+        } else {
+            conn.execute("
             UPDATE lists SET name = ?1, description = ?2
             WHERE list_id = ?3
             ", (&self.name, &self.description, &self.id)
-        )?;
+            )?;
+        }
+        self.is_new = false;
         Ok(())
     }
 
@@ -120,6 +140,8 @@ impl List {
 impl Default for List {
     fn default() -> Self {
         Self {
+            is_new: true,
+
             id: 0.into(),
             name: String::new(),
             description: String::new(),
@@ -156,6 +178,7 @@ mod tests {
             "Item description is wrong. Expected {:?}, got {:?}",
             list_description, list.description
         );
+        assert_eq!(list.is_new, false, "Item from DB claims to be new");
 
         // Delete the item and check that there is no items in the table
         list.delete(&db_connection).unwrap();
@@ -175,4 +198,14 @@ mod tests {
         test_factory.assert_items_number_in_list(&list, 4);
         test_factory.assert_item_in_list(&first_item, &list, false);
     }
+
+    #[rstest]
+    fn save_default(db_connection: &Connection) {
+        let mut list = List::default();
+        assert_eq!(list.is_new, true, "Item claims to be not new");
+
+        list.save(db_connection).unwrap();
+        assert_eq!(list.is_new, false, "Item claims to be new after save");
+    }
+
 }

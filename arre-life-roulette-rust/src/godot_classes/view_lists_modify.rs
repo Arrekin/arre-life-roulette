@@ -38,7 +38,7 @@ pub struct ListModifyView {
     close_button: Option<Gd<Button>>,
 
     // state
-    list: Option<List>,
+    list: List,
     items_out: Vec<Item>,
     mode: Mode,
 }
@@ -88,14 +88,10 @@ impl ListModifyView {
             }
             Mode::Edit => {
                 self.name_line_edit.as_mut().map(|line_edit|
-                    line_edit.set_text(
-                        self.list.as_ref().map(|list| list.name.clone()).expect("Edit mode while no list assigned!").into()
-                    )
+                    line_edit.set_text(self.list.name.clone().into())
                 );
                 self.description_text_edit.as_mut().map(|text_edit|
-                    text_edit.set_text(
-                        self.list.as_ref().map(|list| list.description.clone()).expect("Edit mode while no list assigned!").into()
-                    )
+                    text_edit.set_text(self.list.description.clone().into())
                 );
             }
         }
@@ -105,18 +101,16 @@ impl ListModifyView {
         // Clear old and create a button for each item
         self.items_in_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
         self.items_in_grid_elements.extend(
-            self.list.as_ref().map(|list| {
-                list.items.iter().map(|item| {
-                    let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
-                    self.items_in_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
-                    let mut button = instance.cast::<ItemSelectionButton>();
-                    {
-                        let mut button = button.bind_mut();
-                        button.set_item(item.clone());
-                    }
-                    button
-                })
-            }).unwrap()
+            self.list.items.iter().map(|item| {
+                let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
+                self.items_in_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
+                let mut button = instance.cast::<ItemSelectionButton>();
+                {
+                    let mut button = button.bind_mut();
+                    button.set_item(item.clone());
+                }
+                button
+            })
         );
     }
 
@@ -145,14 +139,14 @@ impl ListModifyView {
 
     pub fn set_mode_add(&mut self) {
         self.mode = Mode::Add;
-        self.list = Some(List::default());
+        self.list = List::default();
         self.set_items_out();
         self.refresh_display();
     }
 
     pub fn set_mode_edit(&mut self, list: List) {
         self.mode = Mode::Edit;
-        self.list = Some(list);
+        self.list = list;
         self.set_items_out();
         self.refresh_display();
     }
@@ -160,17 +154,7 @@ impl ListModifyView {
     fn set_items_out(&mut self) {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
-        // if add mode, items_out are all items in the db, if edit mode, items_out are all items not in the list
-        self.items_out = match self.mode {
-            Mode::Add => {
-                Item::get_all(connection).unwrap()
-            },
-            Mode::Edit => {
-                self.list.as_ref().map(|list| {
-                    list.get_items_not_on_list(connection).unwrap()
-                }).or(Some(vec![])).unwrap()
-            }
-        };
+        self.items_out = self.list.get_items_not_on_list(connection).unwrap();
         godot_print!("{:?}", self.items_out);
     }
 
@@ -193,7 +177,7 @@ impl GodotExt for ListModifyView {
             apply_button: None,
             close_button: None,
 
-            list: None,
+            list: List::default(),
             items_out: vec![],
             mode: Mode::Add,
         }

@@ -24,7 +24,7 @@ pub struct ItemModifyView {
     close_button: Option<Gd<Button>>,
 
     // state
-    item: Option<Item>,
+    item: Item,
     mode: Mode,
 }
 
@@ -41,43 +41,21 @@ impl ItemModifyView {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
 
-        match self.mode {
-            Mode::Add => {
-                Item::create_new(connection, new_name, new_description).unwrap();
-            }
-            Mode::Edit => {
-                let item_id = self.item.as_mut().map(|item| {
-                    item.name = new_name;
-                    item.description = new_description;
-                    item.update(connection).unwrap();
-                    item.id
-                }).expect("Edit mode while no item assigned!");
-                self.item = Some(Item::load(connection, item_id).unwrap());
-            }
-        }
+        self.item.name = new_name;
+        self.item.description = new_description;
+        self.item.save(connection).unwrap();
+
         self.refresh_display();
     }
 
     #[func]
     fn refresh_display(&mut self) {
-        match self.mode {
-            Mode::Add => {
-                self.name_line_edit.as_mut().map(|line_edit| line_edit.set_text("".into()));
-                self.description_text_edit.as_mut().map(|text_edit| text_edit.set_text("".into()));
-            }
-            Mode::Edit => {
-                self.name_line_edit.as_mut().map(|line_edit|
-                    line_edit.set_text(
-                        self.item.as_ref().map(|item| item.name.clone()).expect("Edit mode while no item assigned!").into()
-                    )
-                );
-                self.description_text_edit.as_mut().map(|text_edit|
-                    text_edit.set_text(
-                        self.item.as_ref().map(|item| item.description.clone()).expect("Edit mode while no item assigned!").into()
-                    )
-                );
-            }
-        }
+        self.name_line_edit.as_mut().map(|line_edit|
+            line_edit.set_text(self.item.name.clone().into())
+        );
+        self.description_text_edit.as_mut().map(|text_edit|
+            text_edit.set_text(self.item.description.clone().into())
+        );
     }
 
     #[func]
@@ -88,13 +66,13 @@ impl ItemModifyView {
 
     pub fn set_mode_add(&mut self) {
         self.mode = Mode::Add;
-        self.item = None;
+        self.item = Item::default();
         self.refresh_display();
     }
 
     pub fn set_mode_edit(&mut self, item: Item) {
         self.mode = Mode::Edit;
-        self.item = Some(item);
+        self.item = item;
         self.refresh_display();
     }
 
@@ -110,7 +88,7 @@ impl GodotExt for ItemModifyView {
             apply_button: None,
             close_button: None,
 
-            item: None,
+            item: Item::default(),
             mode: Mode::Add,
         }
     }
