@@ -227,7 +227,7 @@ offset_right = 575.5
 offset_bottom = 243.0
 grow_horizontal = 2
 
-[node name="ItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
+[node name="ListItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -238,7 +238,7 @@ offset_right = 559.5
 offset_bottom = 376.0
 grow_horizontal = 2
 
-[node name="ItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ItemsInScrollContainer"]
+[node name="ListItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ListItemsInScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 6
@@ -257,7 +257,7 @@ offset_right = 581.5
 offset_bottom = 406.0
 grow_horizontal = 2
 
-[node name="ItemsOutScrollContainer2" type="ScrollContainer" parent="UI/ListModifyView"]
+[node name="ListItemsOutScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -268,7 +268,7 @@ offset_right = 557.5
 offset_bottom = 541.0
 grow_horizontal = 2
 
-[node name="ItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ItemsOutScrollContainer2"]
+[node name="ListItemsOutGridContainer" type="GridContainer" parent="UI/ListModifyView/ListItemsOutScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 6

@@ -68,6 +68,17 @@ impl Item {
         conn.execute("DELETE FROM items WHERE item_id = ?1", (self.id,))?;
         Ok(())
     }
+
+    pub fn get_all(conn: &Connection) -> Result<Vec<Item>> {
+        let mut stmt = conn.prepare("
+            SELECT item_id, name, description, is_suspended, is_finished
+            FROM items
+        ")?;
+        let result = stmt.query_map([], |row| {
+            Item::from_row(row)
+        })?.collect::<Result<Vec<_>>>()?;
+        Ok(result)
+    }
 }
 
 impl Default for Item {
@@ -172,10 +183,20 @@ mod tests {
             "Item id is wrong. Expected {:?}, got {:?}",
             expected_item_id, item.id
         );
-        // assert_eq!(
-        //     item.name, "Item #{1}",
-        //     "Item name is wrong. Expected {:?}, got {:?}",
-        //     "Item #{1}", item.name
-        // );
+    }
+
+    #[rstest]
+    #[case(0)]
+    #[case(1)]
+    #[case(5)]
+    fn get_all(
+        db_connection: &Connection,
+        mut test_factory: TestFactory,
+        #[case] expected_number_of_items: usize,
+    ) {
+        // Create 5 items and check that get_all() returns all items
+        test_factory.create_items(expected_number_of_items);
+        let items = Item::get_all(db_connection).unwrap();
+        assert_eq!(items.len(), expected_number_of_items);
     }
 }

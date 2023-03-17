@@ -7,6 +7,7 @@ use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
+use crate::godot_classes::view_lists_modify::ListModifyView;
 use crate::item::Item;
 use crate::list::List;
 
@@ -21,7 +22,7 @@ pub struct ListsView {
 
     // cached UI elements
     list_add_button: Option<Gd<Button>>,
-    list_add_view: Option<Gd<ItemModifyView>>,
+    list_modify_view: Option<Gd<ListModifyView>>,
     lists_grid: Option<Gd<GridContainer>>,
     lists_grid_elements: Vec<Gd<Button>>,
 
@@ -33,7 +34,11 @@ pub struct ListsView {
 impl ListsView {
     #[func]
     fn on_list_add_button_up(&mut self) {
-        self.list_add_view.as_mut().map(|mut view| view.bind_mut().set_visible(true));
+        self.list_modify_view.as_mut().map(|mut view| {
+            let mut view = view.bind_mut();
+            view.set_mode_add();
+            view.set_visible(true);
+        });
     }
     #[func]
     fn refresh_lists_list(&mut self) {
@@ -70,7 +75,7 @@ impl GodotExt for ListsView {
             list_selection_button: load("res://ItemSelectionButton.tscn"),
 
             list_add_button: None,
-            list_add_view: None,
+            list_modify_view: None,
             lists_grid: None,
             lists_grid_elements: vec![],
 
@@ -86,8 +91,8 @@ impl GodotExt for ListsView {
                 0,
             );
         });
-        self.list_add_view = self.base.try_get_node_as("../ListModifyView");
-        self.list_add_view.as_mut().map(|mut view| {
+        self.list_modify_view = self.base.try_get_node_as("../ListModifyView");
+        self.list_modify_view.as_mut().map(|mut view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
                 Callable::from_object_method(self.base.share(), "refresh_lists_list"),

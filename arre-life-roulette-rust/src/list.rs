@@ -67,6 +67,21 @@ impl List {
         Ok(())
     }
 
+    pub fn get_items_not_on_list(&self, conn: &Connection) -> Result<Vec<Item>> {
+        let mut stmt = conn.prepare("
+            SELECT item_id, name, description
+            FROM items i
+            JOIN item_list_map ilm ON i.item_id = ilm.item_id
+            JOIN lists l ON ilm.list_id = l.list_id
+            WHERE list_id != ?1
+            ",
+        )?;
+        let result = stmt.query_map([self.id], |row| {
+            Item::from_row(row)
+        })?.collect::<Result<Vec<_>>>()?;
+        Ok(result)
+    }
+
     /// Updates base properties. Does not manage relations
     pub fn update(&self, conn: &Connection) -> Result<()> {
         conn.execute("
@@ -102,6 +117,16 @@ impl List {
     }
 }
 
+impl Default for List {
+    fn default() -> Self {
+        Self {
+            id: 0.into(),
+            name: String::new(),
+            description: String::new(),
+            items: vec![],
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
