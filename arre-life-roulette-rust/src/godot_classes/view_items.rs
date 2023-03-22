@@ -1,5 +1,5 @@
 use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Control,  Button, GridContainer};
+use godot::engine::{Control, ControlVirtual, Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
@@ -76,7 +76,7 @@ impl ItemsView {
 }
 
 #[godot_api]
-impl GodotExt for ItemsView {
+impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,

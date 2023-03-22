@@ -1,4 +1,4 @@
-use godot::engine::{Control,  Button};
+use godot::engine::{Control,  Button, ButtonVirtual};
 use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::view_items::ItemsView;
@@ -46,7 +46,7 @@ impl ItemSelectionButton {
 }
 
 #[godot_api]
-impl GodotExt for ItemSelectionButton {
+impl ButtonVirtual for ItemSelectionButton {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,

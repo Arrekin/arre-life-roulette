@@ -1,5 +1,5 @@
 use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Panel, LineEdit, TextEdit, Button, NodeExt, Engine};
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Engine};
 use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
@@ -79,7 +79,7 @@ impl ItemModifyView {
 }
 
 #[godot_api]
-impl GodotExt for ItemModifyView {
+impl PanelVirtual for ItemModifyView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,

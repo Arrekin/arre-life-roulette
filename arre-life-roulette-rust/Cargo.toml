@@ -12,5 +12,5 @@ rusqlite = { version = "0.28.0", features = ["bundled"] }
 rand = "0.8.5"
 
 [dev-dependencies]
-rstest = "0.16.0"
+rstest = "0.17.0"
 serial_test = "1.0.0"

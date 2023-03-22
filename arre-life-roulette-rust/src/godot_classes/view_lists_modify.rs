@@ -1,5 +1,5 @@
 use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Panel, LineEdit, TextEdit, Button, NodeExt, Engine, GridContainer};
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Engine, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::obj::EngineClass;
@@ -161,7 +161,7 @@ impl ListModifyView {
 }
 
 #[godot_api]
-impl GodotExt for ListModifyView {
+impl PanelVirtual for ListModifyView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
