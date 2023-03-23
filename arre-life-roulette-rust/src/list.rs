@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use rusqlite::{Connection, Result, Row, ToSql};
 use crate::item::Item;
 use crate::item_tag::ItemTag;
@@ -63,11 +64,10 @@ impl List {
             return Ok(());
         }
         let mut stmt = conn.prepare("
-            SELECT item_id, name, description
+            SELECT i.item_id, i.name, i.description, i.is_suspended, i.is_finished
             FROM items i
             JOIN item_list_map ilm ON i.item_id = ilm.item_id
-            JOIN lists l ON ilm.list_id = l.list_id
-            WHERE list_id = ?1
+            WHERE ilm.list_id = ?1
             ",
         )?;
         self.items = stmt.query_map([self.id], |row| {
@@ -94,7 +94,6 @@ impl List {
         Ok(result)
     }
 
-    /// Updates base properties. Does not manage relations
     pub fn save(&mut self, conn: &Connection) -> Result<()> {
         if self.is_new {
             conn.execute(
@@ -108,6 +107,23 @@ impl List {
             ", (&self.name, &self.description, &self.id)
             )?;
         }
+        // Copy current list of items and reload the original ones to make comparison of what changed
+        let new_items = std::mem::replace(&mut self.items, vec![]).into_iter().collect::<HashSet<_>>();
+        self.load_items(conn)?;
+        let old_items = std::mem::replace(&mut self.items, vec![]).into_iter().collect::<HashSet<_>>();
+        for item in new_items.difference(&old_items) {
+            conn.execute(
+            "INSERT INTO item_list_map (list_id, item_id) VALUES (?1, ?2)",
+            (&self.id, item.id),
+            )?;
+        }
+        for item in old_items.difference(&new_items) {
+            conn.execute(
+            "DELETE FROM item_list_map WHERE list_id = ?1 AND item_id = ?2",
+            (&self.id, item.id),
+            )?;
+        }
+        self.load_items(conn)?;
         self.is_new = false;
         Ok(())
     }
@@ -132,6 +148,8 @@ impl List {
     }
 
     pub fn delete(&self, conn: &Connection) -> Result<()> {
+        // First delete all related items
+        conn.execute("DELETE FROM item_list_map WHERE list_id = ?1", (self.id,))?;
         conn.execute("DELETE FROM lists WHERE list_id = ?1", (self.id,))?;
         Ok(())
     }
@@ -206,6 +224,23 @@ mod tests {
 
         list.save(db_connection).unwrap();
         assert_eq!(list.is_new, false, "Item claims to be new after save");
+    }
+
+    #[rstest]
+    fn save(db_connection: &Connection, mut test_factory: TestFactory) {
+        let mut list = List::create_new(db_connection, "Glorious List", "").unwrap();
+        list.items = test_factory.create_items(3);
+        test_factory.assert_items_number_in_list(&list, 0);
+        list.save(db_connection).unwrap();
+        test_factory.assert_items_number_in_list(&list, 3);
+
+        // Create another 3 items and add them to the list while removing 2 of the old ones.
+        // The final amount after the save should be 4
+        list.items.pop();
+        list.items.pop();
+        list.items.extend(test_factory.create_items(3));
+        list.save(db_connection).unwrap();
+        test_factory.assert_items_number_in_list(&list, 4);
     }
 
 }

@@ -1,9 +1,10 @@
+use std::hash::{Hash, Hasher};
 use rusqlite::{Connection, Result, Row};
 use crate::item_tag::ItemTag;
 use crate::utils::Id;
 
 pub type ItemId = Id<Item>;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Item {
     pub is_new: bool,
 
@@ -108,9 +109,16 @@ impl Default for Item {
     }
 }
 
+impl Hash for Item {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering;
     use std::fmt::Debug;
     use rstest::*;
     use rusqlite::Connection;
@@ -213,5 +221,38 @@ mod tests {
         test_factory.create_items(expected_number_of_items);
         let items = Item::get_all(db_connection).unwrap();
         assert_eq!(items.len(), expected_number_of_items);
+    }
+
+    #[rstest]
+    fn hash_test(db_connection: &Connection) {
+        // Create 2 local items with the same id but different names and descriptions. Hash should be the same.
+        let mut item1 = Item::default();
+        item1.id = 99.into();
+        item1.name = "The hash shall be the same".into();
+        item1.description = "Even thou the name and desc are different".into();
+        let mut item2 = Item::default();
+        item2.id = 99.into();
+        item2.name = "The hash shall be identical".into();
+        item2.description = "Even thou the name and desc differ".into();
+        // Hash should be the same
+        let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
+        item1.hash(&mut hasher1);
+        item2.hash(&mut hasher2);
+        assert_eq!(hasher1.finish(), hasher2.finish());
+
+        // Make the id different and name & disc same. Hash should be different.
+        item2.id = 100.into();
+        item2.name = "The hash shall be different".into();
+        item2.description = "Even thou the name and desc are the same".into();
+        item1.id = 101.into();
+        item1.name = "The hash shall be different".into();
+        item1.description = "Even thou the name and desc are the same".into();
+        // Hash should be different
+        let mut hasher1 = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher2 = std::collections::hash_map::DefaultHasher::new();
+        item1.hash(&mut hasher1);
+        item2.hash(&mut hasher2);
+        assert_ne!(hasher1.finish(), hasher2.finish());
     }
 }

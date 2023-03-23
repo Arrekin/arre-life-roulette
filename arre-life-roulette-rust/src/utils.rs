@@ -1,9 +1,11 @@
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::Deref;
 use rusqlite::{Result};
 use rusqlite::types::{ToSql, FromSql, FromSqlResult};
+use crate::item::Item;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Id<T> {
     id: i64,
     phantom: PhantomData<T>,
@@ -46,5 +48,11 @@ impl <T> Deref for Id<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.id
+    }
+}
+
+impl <T>Hash for Id<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
     }
 }
