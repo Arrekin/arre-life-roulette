@@ -4,7 +4,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
-use crate::godot_classes::item_button::ItemSelectionButton;
+use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::item::Item;
@@ -22,7 +22,7 @@ pub struct ItemsView {
     pub item_add_button: Option<Gd<Button>>,
     pub item_modify_view: Option<Gd<ItemModifyView>>,
     pub items_grid: Option<Gd<GridContainer>>,
-    pub items_grid_elements: Vec<Gd<ItemSelectionButton>>,
+    pub items_grid_elements: Vec<Gd<SelectionButton>>,
 
     // state
     items: Vec<Item>,
@@ -38,16 +38,10 @@ impl ItemsView {
             view.show();
         });
     }
-    #[func]
-    fn on_item_selection_button_up(&mut self, item_selection_button: Gd<ItemSelectionButton>) {
-        self.item_modify_view.as_mut().map(|mut view| {
-            let mut view = view.bind_mut();
-            view.set_mode_edit(item_selection_button.bind().item.clone());
-            view.show();
-        });
-    }
+
     #[func]
     fn refresh_items_list(&mut self) {
+        let self_reference = self.base.share().cast::<Self>();
         // Get current list of all items from the DB
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
@@ -58,16 +52,19 @@ impl ItemsView {
         self.items = rows.map(|row| row.unwrap()).collect();
 
         // Clear old and create a button for each item
-        self.items_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
+        self.items_grid_elements.drain(..).for_each(|mut item_btn| item_btn.bind_mut().queue_free());
         self.items_grid_elements.extend(
         self.items.iter().map(
             |item| {
                 let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
                 self.items_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
-                let mut button = instance.cast::<ItemSelectionButton>();
+                let mut button = instance.cast::<SelectionButton>();
                 {
                     let mut button = button.bind_mut();
                     button.set_item(item.clone());
+                    button.on_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView{
+                        parent: self_reference.share(),
+                    }));
                 }
                 button
             })
@@ -80,7 +77,7 @@ impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            item_selection_button: load("res://ItemSelectionButton.tscn"),
+            item_selection_button: load("res://SelectionButton.tscn"),
 
             item_add_button: None,
             item_modify_view: None,
@@ -130,5 +127,22 @@ impl ControlVirtual for ItemsView {
             Callable::from_object_method(self.base.share(), "hide"),
             0,
         );
+    }
+}
+
+struct OnClickBehaviorShowItemModifyView {
+    pub parent: Gd<ItemsView>,
+}
+
+impl OnClickBehavior for OnClickBehaviorShowItemModifyView {
+    fn on_click(&mut self, content: &Content) {
+        if let Content::Item(item) = content {
+            let mut parent = self.parent.bind_mut();
+            parent.item_modify_view.as_mut().map(|view| {
+                let mut view = view.bind_mut();
+                view.set_mode_edit(item.clone());
+                view.show();
+            });
+        }
     }
 }

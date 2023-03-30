@@ -165,6 +165,7 @@ grow_horizontal = 2
 text = "Close"
 
 [node name="ListModifyView" type="ListModifyView" parent="UI"]
+visible = false
 offset_right = 1153.0
 offset_bottom = 652.0
 

@@ -4,5 +4,5 @@ mod utils;
 pub mod view_items;
 pub mod view_lists;
 pub mod tab_view_selector;
-pub mod item_button;
+pub mod selection_button;
 pub mod view_lists_modify;

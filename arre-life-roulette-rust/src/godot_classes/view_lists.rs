@@ -5,6 +5,7 @@ use godot::engine::packed_scene::GenEditState;
 use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::godot_classes::view_lists_modify::ListModifyView;
@@ -24,7 +25,7 @@ pub struct ListsView {
     list_add_button: Option<Gd<Button>>,
     list_modify_view: Option<Gd<ListModifyView>>,
     lists_grid: Option<Gd<GridContainer>>,
-    lists_grid_elements: Vec<Gd<Button>>,
+    lists_grid_elements: Vec<Gd<SelectionButton>>,
 
     // state
     lists: Vec<List>,
@@ -42,6 +43,7 @@ impl ListsView {
     }
     #[func]
     fn refresh_lists_list(&mut self) {
+        let self_reference = self.base.share().cast::<Self>();
         // Get current list of all lists from the DB
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
@@ -52,18 +54,22 @@ impl ListsView {
         self.lists = rows.map(|row| row.unwrap()).collect();
 
         // Clear old and create a button for each item
-        self.lists_grid_elements.drain(..).for_each(|mut list| list.queue_free());
+        self.lists_grid_elements.drain(..).for_each(|mut list_btn| list_btn.bind_mut().queue_free());
         self.lists_grid_elements.extend(
             self.lists.iter().map(|list| {
                     let instance = self.list_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
                     self.lists_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
-                    let mut button = instance.cast::<Button>();
-                    button.set_text(list.name.clone().into());
-                    button.set_tooltip_text(list.description.clone().into());
+                    let mut button = instance.cast::<SelectionButton>();
+                    {
+                        let mut button = button.bind_mut();
+                        button.set_list(list.clone());
+                        button.on_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView{
+                            parent: self_reference.share(),
+                        }));
+                    }
                     button
-                })
-            );
-
+            })
+        );
     }
 }
 
@@ -72,7 +78,7 @@ impl ControlVirtual for ListsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            list_selection_button: load("res://ItemSelectionButton.tscn"),
+            list_selection_button: load("res://SelectionButton.tscn"),
 
             list_add_button: None,
             list_modify_view: None,
@@ -122,5 +128,22 @@ impl ControlVirtual for ListsView {
             Callable::from_object_method(self.base.share(), "hide"),
             0,
         );
+    }
+}
+
+struct OnClickBehaviorShowListModifyView {
+    pub parent: Gd<ListsView>,
+}
+
+impl OnClickBehavior for OnClickBehaviorShowListModifyView {
+    fn on_click(&mut self, content: &Content) {
+        if let Content::List(list) = content {
+            let mut parent = self.parent.bind_mut();
+            parent.list_modify_view.as_mut().map(|view| {
+                let mut view = view.bind_mut();
+                view.set_mode_edit(list.clone());
+                view.show();
+            });
+        }
     }
 }

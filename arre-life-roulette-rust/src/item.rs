@@ -224,7 +224,7 @@ mod tests {
     }
 
     #[rstest]
-    fn hash_test(db_connection: &Connection) {
+    fn hash_test() {
         // Create 2 local items with the same id but different names and descriptions. Hash should be the same.
         let mut item1 = Item::default();
         item1.id = 99.into();

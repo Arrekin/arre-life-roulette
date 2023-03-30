@@ -8,7 +8,7 @@ pub type ListId = Id<List>;
 
 /// A list is a collection of items.
 /// If `is_new` is true, the id field is invalid as we had not asked yet the DB to assign a new id.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct List {
     pub is_new: bool, // Whether the list is saved in DB
 
@@ -81,12 +81,13 @@ impl List {
             return Ok(Item::get_all(conn)?)
         }
         let mut stmt = conn.prepare("
-            SELECT item_id, name, description
+            SELECT i.item_id, i.name, i.description, i.is_suspended, i.is_finished
             FROM items i
-            JOIN item_list_map ilm ON i.item_id = ilm.item_id
-            JOIN lists l ON ilm.list_id = l.list_id
-            WHERE list_id != ?1
-            ",
+            WHERE i.item_id NOT IN (
+              SELECT ilp.item_id
+              FROM item_list_map ilp
+              WHERE ilp.list_id = ?1
+            )",
         )?;
         let result = stmt.query_map([self.id], |row| {
             Item::from_row(row)
