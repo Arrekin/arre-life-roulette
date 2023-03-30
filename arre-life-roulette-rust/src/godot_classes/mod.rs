@@ -6,3 +6,4 @@ pub mod view_lists;
 pub mod tab_view_selector;
 pub mod selection_button;
 pub mod view_lists_modify;
+pub mod signals;

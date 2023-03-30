@@ -6,6 +6,7 @@ use godot::engine::packed_scene::GenEditState;
 use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::item::Item;
@@ -28,18 +29,18 @@ pub struct TabViewSelector {
 impl TabViewSelector {
     #[func]
     fn on_item_view_button_up(&mut self) {
-        let mut globals = get_singleton::<Globals>("Globals");
-        globals.bind_mut().emit_signal("item_view_tab_selected".into(), &[]);
+        let mut signals = get_singleton::<Signals>("Signals");
+        signals.bind_mut().emit_signal("item_view_tab_selected".into(), &[]);
     }
     #[func]
     fn on_list_view_button_up(&mut self) {
-        let mut globals = get_singleton::<Globals>("Globals");
-        globals.bind_mut().emit_signal("list_view_tab_selected".into(), &[]);
+        let mut signals = get_singleton::<Signals>("Signals");
+        signals.bind_mut().emit_signal("list_view_tab_selected".into(), &[]);
     }
     #[func]
     fn on_tag_view_button_up(&mut self) {
-        let mut globals = get_singleton::<Globals>("Globals");
-        globals.bind_mut().emit_signal("tag_view_tab_selected".into(), &[]);
+        let mut signals = get_singleton::<Signals>("Signals");
+        signals.bind_mut().emit_signal("tag_view_tab_selected".into(), &[]);
     }
 }
 

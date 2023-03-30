@@ -5,6 +5,7 @@ use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
+use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::item::Item;
@@ -37,6 +38,12 @@ impl ItemsView {
             view.set_mode_add();
             view.show();
         });
+    }
+
+    #[func]
+    fn on_view_selected(&mut self) {
+        self.refresh_items_list();
+        self.show();
     }
 
     #[func]
@@ -111,22 +118,25 @@ impl ControlVirtual for ItemsView {
         }
 
         // Get singleton and connect to global signals(show / hide)
-        let mut globals = get_singleton::<Globals>("Globals");
-        globals.bind_mut().connect(
-            "item_view_tab_selected".into(),
-            Callable::from_object_method(self.base.share(), "show"),
-            0,
-        );
-        globals.bind_mut().connect(
-            "list_view_tab_selected".into(),
-            Callable::from_object_method(self.base.share(), "hide"),
-            0,
-        );
-        globals.bind_mut().connect(
-            "tag_view_tab_selected".into(),
-            Callable::from_object_method(self.base.share(), "hide"),
-            0,
-        );
+        let mut signals = get_singleton::<Signals>("Signals");
+        {
+            let mut signals = signals.bind_mut();
+            signals.connect(
+                "item_view_tab_selected".into(),
+                Callable::from_object_method(self.base.share(), "on_view_selected"),
+                0,
+            );
+            signals.connect(
+                "list_view_tab_selected".into(),
+                Callable::from_object_method(self.base.share(), "hide"),
+                0,
+            );
+            signals.connect(
+                "tag_view_tab_selected".into(),
+                Callable::from_object_method(self.base.share(), "hide"),
+                0,
+            );
+        }
     }
 }
 

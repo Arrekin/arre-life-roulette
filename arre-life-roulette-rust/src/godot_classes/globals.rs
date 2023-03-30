@@ -18,15 +18,7 @@ pub struct Globals {
 }
 
 #[godot_api]
-impl Globals {
-    // signals
-    #[signal]
-    fn item_view_tab_selected();
-    #[signal]
-    fn list_view_tab_selected();
-    #[signal]
-    fn tag_view_tab_selected();
-}
+impl Globals {}
 
 #[godot_api]
 impl NodeVirtual for Globals {
