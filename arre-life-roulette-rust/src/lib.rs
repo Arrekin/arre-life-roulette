@@ -1,6 +1,7 @@
 mod item;
 mod item_tag;
 mod db_init;
+#[cfg(test)]
 mod test_fixtures;
 mod list;
 mod utils;

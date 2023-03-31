@@ -1,7 +1,6 @@
 use std::collections::HashSet;
-use rusqlite::{Connection, Result, Row, ToSql};
+use rusqlite::{Connection, Result, Row};
 use crate::item::Item;
-use crate::item_tag::ItemTag;
 use crate::utils::Id;
 
 pub type ListId = Id<List>;

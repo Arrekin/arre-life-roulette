@@ -1,6 +1,5 @@
-use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Engine};
-use godot::obj::EngineClass;
+use godot::builtin::{Callable};
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt};
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
@@ -96,7 +95,7 @@ impl PanelVirtual for ItemModifyView {
         self.name_line_edit = self.base.try_get_node_as("ItemNameLineEdit");
         self.description_text_edit = self.base.try_get_node_as("ItemDescriptionTextEdit");
         self.apply_button = self.base.try_get_node_as("ItemApplyButton");
-        self.apply_button.as_mut().map(|mut button| {
+        self.apply_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_apply_item_button_up"),
@@ -104,7 +103,7 @@ impl PanelVirtual for ItemModifyView {
             )
         });
         self.close_button = self.base.try_get_node_as("DialogCloseButton");
-        self.close_button.as_mut().map(|mut button| {
+        self.close_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),

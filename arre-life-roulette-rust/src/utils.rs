@@ -3,7 +3,6 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 use rusqlite::{Result};
 use rusqlite::types::{ToSql, FromSql, FromSqlResult};
-use crate::item::Item;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Id<T> {

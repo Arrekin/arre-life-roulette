@@ -1,16 +1,13 @@
-use godot::builtin::{Callable, ToVariant};
+use godot::builtin::{Callable};
 use godot::engine::{Control, ControlVirtual, Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
-use godot::obj::EngineClass;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::godot_classes::view_lists_modify::ListModifyView;
-use crate::item::Item;
 use crate::list::List;
 
 #[derive(GodotClass)]
@@ -36,7 +33,7 @@ pub struct ListsView {
 impl ListsView {
     #[func]
     fn on_list_add_button_up(&mut self) {
-        self.list_modify_view.as_mut().map(|mut view| {
+        self.list_modify_view.as_mut().map(|view| {
             let mut view = view.bind_mut();
             view.set_mode_add();
             view.set_visible(true);
@@ -56,7 +53,7 @@ impl ListsView {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
         let mut stmt = connection.prepare("SELECT * FROM lists").unwrap();
-        let mut rows = stmt.query_map([], |row| {
+        let rows = stmt.query_map([], |row| {
             Ok(List::from_row(row).unwrap())
         }).unwrap();
         self.lists = rows.map(|row| row.unwrap()).collect();
@@ -98,7 +95,7 @@ impl ControlVirtual for ListsView {
     }
     fn ready(&mut self) {
         self.list_add_button = self.base.try_get_node_as("ListAddDialogButton");
-        self.list_add_button.as_mut().map(|mut button| {
+        self.list_add_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_list_add_button_up"),
@@ -106,7 +103,7 @@ impl ControlVirtual for ListsView {
             );
         });
         self.list_modify_view = self.base.try_get_node_as("../ListModifyView");
-        self.list_modify_view.as_mut().map(|mut view| {
+        self.list_modify_view.as_mut().map(|view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
                 Callable::from_object_method(self.base.share(), "refresh_lists_list"),

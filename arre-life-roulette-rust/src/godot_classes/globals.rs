@@ -1,4 +1,3 @@
-use godot::builtin::{Callable, ToVariant};
 use godot::engine::{Node, NodeVirtual};
 use godot::prelude::*;
 use rusqlite::Connection;

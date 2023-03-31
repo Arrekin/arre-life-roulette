@@ -1,6 +1,5 @@
 use std::borrow::Borrow;
 use rusqlite::{Connection, Result};
-#[cfg(test)]
 use rstest::*;
 
 use crate::db_init::initialize_database;
@@ -8,7 +7,6 @@ use crate::item::{Item, ItemId};
 use crate::item_tag::{ItemTag, ItemTagId};
 use crate::list::{List, ListId};
 
-#[cfg(test)]
 #[fixture]
 #[once]
 pub fn db_connection() -> Connection {
@@ -20,13 +18,11 @@ pub fn db_connection() -> Connection {
     connection
 }
 
-#[cfg(test)]
 #[fixture]
 pub fn test_factory<'a>(db_connection: &'a Connection) -> TestFactory<'a> {
     TestFactory::new(&db_connection)
 }
 
-#[cfg(test)]
 pub struct TestFactory<'a> {
     connection: &'a Connection,
     created_items: Vec<ItemId>,
@@ -37,7 +33,6 @@ pub struct TestFactory<'a> {
     item_tags_count: usize,
 }
 
-#[cfg(test)]
 impl TestFactory<'_> {
     pub fn new<'a>(connection: &'a Connection) -> TestFactory {
         TestFactory {
@@ -99,7 +94,6 @@ impl TestFactory<'_> {
 
 }
 
-#[cfg(test)]
 impl Drop for TestFactory<'_> {
     fn drop(&mut self) {
         self.connection.execute("\

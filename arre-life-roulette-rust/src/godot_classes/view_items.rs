@@ -1,4 +1,4 @@
-use godot::builtin::{Callable, ToVariant};
+use godot::builtin::{Callable};
 use godot::engine::{Control, ControlVirtual, Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
@@ -33,7 +33,7 @@ pub struct ItemsView {
 impl ItemsView {
     #[func]
     fn on_item_add_button_up(&mut self) {
-        self.item_modify_view.as_mut().map(|mut view| {
+        self.item_modify_view.as_mut().map(|view| {
             let mut view = view.bind_mut();
             view.set_mode_add();
             view.show();
@@ -53,7 +53,7 @@ impl ItemsView {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
         let mut stmt = connection.prepare("SELECT * FROM items").unwrap();
-        let mut rows = stmt.query_map([], |row| {
+        let rows = stmt.query_map([], |row| {
             Ok(Item::from_row(row).unwrap())
         }).unwrap();
         self.items = rows.map(|row| row.unwrap()).collect();
@@ -96,7 +96,7 @@ impl ControlVirtual for ItemsView {
     }
     fn ready(&mut self) {
         self.item_add_button = self.base.try_get_node_as("ItemAddDialogButton");
-        self.item_add_button.as_mut().map(|mut button| {
+        self.item_add_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_item_add_button_up"),
@@ -104,7 +104,7 @@ impl ControlVirtual for ItemsView {
             );
         });
         self.item_modify_view = self.base.try_get_node_as("../ItemModifyView");
-        self.item_modify_view.as_mut().map(|mut view| {
+        self.item_modify_view.as_mut().map(|view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
                 Callable::from_object_method(self.base.share(), "refresh_items_list"),

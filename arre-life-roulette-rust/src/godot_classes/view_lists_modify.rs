@@ -186,7 +186,7 @@ impl PanelVirtual for ListModifyView {
         self.items_in_grid = self.base.try_get_node_as("ListItemsInScrollContainer/ListItemsInGridContainer");
         self.items_out_grid = self.base.try_get_node_as("ListItemsOutScrollContainer/ListItemsOutGridContainer");
         self.apply_button = self.base.try_get_node_as("ListApplyButton");
-        self.apply_button.as_mut().map(|mut button| {
+        self.apply_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_apply_list_button_up"),
@@ -194,7 +194,7 @@ impl PanelVirtual for ListModifyView {
             )
         });
         self.close_button = self.base.try_get_node_as("DialogCloseButton");
-        self.close_button.as_mut().map(|mut button| {
+        self.close_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),

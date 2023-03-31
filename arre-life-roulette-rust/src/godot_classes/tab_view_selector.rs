@@ -1,16 +1,9 @@
-use godot::builtin::{Callable, ToVariant};
-use godot::engine::{Control, Button, HBoxContainer};
+use godot::builtin::{Callable};
+use godot::engine::{Button, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
-use godot::obj::EngineClass;
 use godot::prelude::*;
-use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_item_modify::ItemModifyView;
-use crate::item::Item;
-use crate::list::List;
 
 #[derive(GodotClass)]
 #[class(base=HBoxContainer)]
