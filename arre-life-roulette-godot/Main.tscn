@@ -109,6 +109,179 @@ theme_override_constants/h_separation = 3
 theme_override_constants/v_separation = 3
 columns = 4
 
+[node name="RollView" type="RollView" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AwaitingSubview" type="Control" parent="UI/RollView"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RollStartButton" type="Button" parent="UI/RollView/AwaitingSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -254.0
+offset_top = 211.0
+offset_right = 278.0
+offset_bottom = 343.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 70
+text = "Roll!"
+
+[node name="WorkAssignedSubview" type="Control" parent="UI/RollView"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ItemNameLabel" type="Label" parent="UI/RollView/WorkAssignedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -512.0
+offset_top = 185.0
+offset_right = 531.0
+offset_bottom = 257.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 50
+text = "Rolled item: ############"
+horizontal_alignment = 1
+
+[node name="ItemDescriptionLabel" type="Label" parent="UI/RollView/WorkAssignedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -512.0
+offset_top = 282.0
+offset_right = 528.0
+offset_bottom = 368.0
+grow_horizontal = 2
+text = "<<< Item description goes here >>>"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text_overrun_behavior = 3
+
+[node name="MotivatorLabel" type="Label" parent="UI/RollView/WorkAssignedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -353.0
+offset_top = 429.0
+offset_right = 461.0
+offset_bottom = 471.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 20
+text = "Work on you item and come back once you are done!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WorkFinishButton" type="Button" parent="UI/RollView/WorkAssignedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -365.0
+offset_top = 495.0
+offset_right = 375.0
+offset_bottom = 599.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 70
+text = "Mark as completed"
+
+[node name="WorkFinishedSubview" type="Control" parent="UI/RollView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CongratsLabel" type="Label" parent="UI/RollView/WorkFinishedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -254.0
+offset_top = 214.0
+offset_right = 278.0
+offset_bottom = 300.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 60
+text = "Well Done!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RollAgainButton" type="Button" parent="UI/RollView/WorkFinishedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -254.0
+offset_top = 306.0
+offset_right = 278.0
+offset_bottom = 410.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 70
+text = "Roll again >>>"
+
+[node name="CloseButton" type="Button" parent="UI/RollView/WorkFinishedSubview"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -254.0
+offset_top = 429.0
+offset_right = 278.0
+offset_bottom = 533.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 70
+text = "Close"
+
+[node name="ListNameLabel" type="Label" parent="UI/RollView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -438.0
+offset_top = 90.0
+offset_right = 461.0
+offset_bottom = 148.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 35
+text = "List: ########"
+horizontal_alignment = 1
+
+[node name="WorkCancelButton" type="Button" parent="UI/RollView"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 337.0
+offset_top = 20.0
+offset_right = 540.0
+offset_bottom = 68.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 30
+text = "Cancel"
+
 [node name="ItemModifyView" type="ItemModifyView" parent="UI"]
 visible = false
 anchors_preset = -1
