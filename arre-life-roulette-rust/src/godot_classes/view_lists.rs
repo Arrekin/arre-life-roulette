@@ -9,6 +9,7 @@ use crate::godot_classes::selection_button::{Content, OnClickBehavior, Selection
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_lists_modify::ListModifyView;
+use crate::godot_classes::view_roll::RollView;
 use crate::list::List;
 
 #[derive(GodotClass)]
@@ -22,6 +23,7 @@ pub struct ListsView {
 
     // cached UI elements
     list_add_button: Option<Gd<Button>>,
+    list_roll_view: Option<Gd<RollView>>,
     list_modify_view: Option<Gd<ListModifyView>>,
     lists_grid: Option<Gd<GridContainer>>,
     lists_grid_elements: Vec<Gd<SelectionButton>>,
@@ -69,7 +71,10 @@ impl ListsView {
                     {
                         let mut button = button.bind_mut();
                         button.set_list(list.clone());
-                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView{
+                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListRollView{
+                            parent: self_reference.share(),
+                        }));
+                        button.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView{
                             parent: self_reference.share(),
                         }));
                     }
@@ -87,6 +92,7 @@ impl ControlVirtual for ListsView {
             list_selection_button: load(SELECTION_BUTTON_SCENE),
 
             list_add_button: None,
+            list_roll_view: None,
             list_modify_view: None,
             lists_grid: None,
             lists_grid_elements: vec![],
@@ -100,6 +106,14 @@ impl ControlVirtual for ListsView {
             button.connect(
                 "button_up".into(),
                 Callable::from_object_method(self.base.share(), "on_list_add_button_up"),
+                0,
+            );
+        });
+        self.list_roll_view = self.base.try_get_node_as("../RollView");
+        self.list_roll_view.as_mut().map(|view| {
+            view.bind_mut().connect(
+                "dialog_closed".into(),
+                Callable::from_object_method(self.base.share(), "refresh_lists_list"),
                 0,
             );
         });
@@ -151,6 +165,24 @@ impl OnClickBehavior for OnClickBehaviorShowListModifyView {
             parent.list_modify_view.as_mut().map(|view| {
                 let mut view = view.bind_mut();
                 view.set_mode_edit(list.clone());
+                view.show();
+            });
+        }
+    }
+}
+
+struct OnClickBehaviorShowListRollView {
+    pub parent: Gd<ListsView>,
+}
+
+impl OnClickBehavior for OnClickBehaviorShowListRollView {
+    fn on_click(&mut self, content: &Content) {
+        if let Content::List(list) = content {
+            let mut parent = self.parent.bind_mut();
+            parent.list_roll_view.as_mut().map(|view| {
+                let mut view = view.bind_mut();
+                view.set_list(list.clone());
+                view.refresh_view();
                 view.show();
             });
         }

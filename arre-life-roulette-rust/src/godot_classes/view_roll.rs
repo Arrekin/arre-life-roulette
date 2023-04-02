@@ -43,13 +43,15 @@ pub struct RollView {
 
 #[godot_api]
 impl RollView {
+    #[signal]
+    fn dialog_closed();
 
-    fn set_list(&mut self, list: List) {
+    pub fn set_list(&mut self, list: List) {
         self.list = list;
     }
 
     #[func]
-    fn refresh_view(&mut self){
+    pub fn refresh_view(&mut self){
         self.list_name_label.as_mut().unwrap().set_text(self.list.name.clone().into());
         match self.roll_state {
             RollState::AwaitingRoll => {
@@ -101,6 +103,7 @@ impl RollView {
     #[func]
     fn on_work_cancel_button_up(&mut self) {
         self.base.hide();
+        self.emit_signal("dialog_closed".into(), &[]);
     }
 
     #[func]
@@ -112,6 +115,7 @@ impl RollView {
     #[func]
     fn on_close_button_up(&mut self) {
         self.base.hide();
+        self.emit_signal("dialog_closed".into(), &[]);
     }
 }
 
