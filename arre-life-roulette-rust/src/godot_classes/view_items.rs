@@ -4,6 +4,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
@@ -69,7 +70,7 @@ impl ItemsView {
                 {
                     let mut button = button.bind_mut();
                     button.set_item(item.clone());
-                    button.on_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView{
+                    button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView{
                         parent: self_reference.share(),
                     }));
                 }
@@ -84,7 +85,7 @@ impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            item_selection_button: load("res://SelectionButton.tscn"),
+            item_selection_button: load(SELECTION_BUTTON_SCENE),
 
             item_add_button: None,
             item_modify_view: None,

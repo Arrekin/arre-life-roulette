@@ -1,4 +1,5 @@
-use godot::engine::{Button, ButtonVirtual};
+use godot::engine::{Button, ButtonVirtual, InputEvent, InputEventMouseButton};
+use godot::engine::global::MouseButton;
 use godot::prelude::*;
 use crate::item::Item;
 use crate::list::List;
@@ -17,7 +18,8 @@ pub struct SelectionButton {
     base: Base<Button>,
 
     // components
-    pub on_click_behavior: Option<Box<dyn OnClickBehavior>>,
+    pub on_left_click_behavior: Option<Box<dyn OnClickBehavior>>,
+    pub on_right_click_behavior: Option<Box<dyn OnClickBehavior>>,
 
     // state
     pub content: Content,
@@ -38,9 +40,40 @@ impl SelectionButton {
     }
 
     #[func]
-    fn on_button_up(&mut self) {
-        let behavior = self.on_click_behavior.as_mut().unwrap();
-        behavior.on_click(&self.content);
+    fn on_left_button_up(&mut self) {
+        godot_print!("SelectionButton::on_left_button_up");
+        self.on_left_click_behavior.as_mut().map(|behavior| {
+            behavior.on_click(&self.content);
+        });
+    }
+
+    #[func]
+    fn on_right_button_up(&mut self) {
+        godot_print!("SelectionButton::on_right_button_up");
+        self.on_right_click_behavior.as_mut().map(|behavior| {
+            behavior.on_click(&self.content);
+        });
+    }
+
+    #[func]
+    fn on_gui_input(&mut self, event: Gd<InputEvent>) {
+        if let Some(event) = event.try_cast::<InputEventMouseButton>() {
+            if event.is_pressed() {
+                match event.get_button_index() {
+                    MouseButton::MOUSE_BUTTON_LEFT => {
+                        self.on_left_click_behavior.as_mut().map(|behavior| {
+                            behavior.on_click(&self.content);
+                        });
+                    },
+                    MouseButton::MOUSE_BUTTON_RIGHT => {
+                        self.on_right_click_behavior.as_mut().map(|behavior| {
+                            behavior.on_click(&self.content);
+                        });
+                    },
+                    _ => {}
+                }
+            }
+        }
     }
 
     pub fn set_item(&mut self, item: Item) {
@@ -60,7 +93,9 @@ impl ButtonVirtual for SelectionButton {
         Self {
             base,
 
-            on_click_behavior: None,
+            // components
+            on_left_click_behavior: None,
+            on_right_click_behavior: None,
 
             content: Content::Empty,
         }
@@ -69,8 +104,8 @@ impl ButtonVirtual for SelectionButton {
     fn ready(&mut self) {
         let self_reference = self.base.share();
         self.connect(
-            "button_up".into(),
-            Callable::from_object_method(self_reference, "on_button_up"),
+            "gui_input".into(),
+            Callable::from_object_method(self_reference, "on_gui_input"),
             0,
         );
     }

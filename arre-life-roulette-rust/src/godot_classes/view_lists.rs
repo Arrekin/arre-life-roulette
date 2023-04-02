@@ -4,6 +4,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
 use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
@@ -68,7 +69,7 @@ impl ListsView {
                     {
                         let mut button = button.bind_mut();
                         button.set_list(list.clone());
-                        button.on_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView{
+                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView{
                             parent: self_reference.share(),
                         }));
                     }
@@ -83,7 +84,7 @@ impl ControlVirtual for ListsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            list_selection_button: load("res://SelectionButton.tscn"),
+            list_selection_button: load(SELECTION_BUTTON_SCENE),
 
             list_add_button: None,
             list_modify_view: None,
