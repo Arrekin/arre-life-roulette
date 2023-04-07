@@ -49,6 +49,8 @@ impl HBoxContainerVirtual for TabViewSelector {
         }
     }
     fn ready(&mut self) {
+        self.add_theme_constant_override("separation".into(), 20);
+
         self.items_view_button = self.base.try_get_node_as("ItemsViewButton");
         self.items_view_button.as_mut().map(|button|
             button.connect(

@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://ccl2262542mx2"]
+[gd_scene load_steps=2 format=3 uid="uid://ccl2262542mx2"]
+
+[ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 
 [node name="Root" type="Node2D"]
 
@@ -13,20 +15,24 @@ offset_top = 5.0
 offset_right = 229.0
 offset_bottom = 68.0
 grow_horizontal = 2
+alignment = 1
 
 [node name="ItemsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+theme = ExtResource("1_666we")
 text = "Items"
 
 [node name="ListsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+theme = ExtResource("1_666we")
 text = "Lists"
 
 [node name="TagsViewButton" type="Button" parent="UI/TabSelectionHBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
+theme = ExtResource("1_666we")
 text = "Tags"
 
 [node name="ItemsView" type="ItemsView" parent="UI"]
