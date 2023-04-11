@@ -122,6 +122,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_666we")
 
 [node name="AwaitingSubview" type="Control" parent="UI/RollView"]
 visible = false
@@ -289,11 +290,11 @@ theme_override_font_sizes/font_size = 30
 text = "Cancel"
 
 [node name="ItemModifyView" type="ItemModifyView" parent="UI"]
-visible = false
 anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 0.997
 offset_bottom = -0.0560303
+theme = ExtResource("1_666we")
 
 [node name="ItemNameLineEdit" type="LineEdit" parent="UI/ItemModifyView"]
 layout_mode = 1
@@ -347,6 +348,7 @@ text = "Close"
 visible = false
 offset_right = 1153.0
 offset_bottom = 652.0
+theme = ExtResource("1_666we")
 
 [node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView"]
 layout_mode = 1
@@ -358,7 +360,7 @@ offset_top = 86.0
 offset_right = 366.5
 offset_bottom = 124.0
 grow_horizontal = 2
-placeholder_text = "Item Name"
+placeholder_text = "List Name"
 
 [node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView"]
 layout_mode = 1
@@ -370,7 +372,7 @@ offset_top = 135.0
 offset_right = 370.5
 offset_bottom = 205.0
 grow_horizontal = 2
-placeholder_text = "Item Description"
+placeholder_text = "List Description"
 
 [node name="ListApplyButton" type="Button" parent="UI/ListModifyView"]
 layout_mode = 1
@@ -382,7 +384,7 @@ offset_top = 567.0
 offset_right = 163.5
 offset_bottom = 608.0
 grow_horizontal = 2
-text = "Add Item"
+text = "Add List"
 
 [node name="DialogCloseButton" type="Button" parent="UI/ListModifyView"]
 layout_mode = 1
