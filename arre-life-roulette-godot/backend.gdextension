@@ -2,4 +2,5 @@
 entry_symbol = "gdext_rust_init"
 
 [libraries]
+linux.x86_64 = "res://../arre-life-roulette-rust/target/debug/libarre_life_roulette_rust.so"
 windows.64 = "res://../arre-life-roulette-rust/target/debug/arre_life_roulette_rust.dll"
