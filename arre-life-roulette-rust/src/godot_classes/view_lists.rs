@@ -101,7 +101,7 @@ impl ControlVirtual for ListsView {
         }
     }
     fn ready(&mut self) {
-        self.list_add_button = self.base.try_get_node_as("ListAddDialogButton");
+        self.list_add_button = self.base.try_get_node_as("VBoxContainer/MarginContainer/ListAddDialogButton");
         self.list_add_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
@@ -109,7 +109,7 @@ impl ControlVirtual for ListsView {
                 0,
             );
         });
-        self.list_roll_view = self.base.try_get_node_as("../RollView");
+        self.list_roll_view = self.base.try_get_node_as("../../RollView");
         self.list_roll_view.as_mut().map(|view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
@@ -117,7 +117,7 @@ impl ControlVirtual for ListsView {
                 0,
             );
         });
-        self.list_modify_view = self.base.try_get_node_as("../ListModifyView");
+        self.list_modify_view = self.base.try_get_node_as("../../ListModifyView");
         self.list_modify_view.as_mut().map(|view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
@@ -125,7 +125,7 @@ impl ControlVirtual for ListsView {
                 0,
             );
         });
-        self.lists_grid = self.base.try_get_node_as("ListsListScrollContainer/ListsListGridContainer");
+        self.lists_grid = self.base.try_get_node_as("VBoxContainer/ListsListScrollContainer/ListsListGridContainer");
 
         if self.is_visible() {
             self.refresh_lists_list();

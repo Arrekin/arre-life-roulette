@@ -96,7 +96,7 @@ impl ControlVirtual for ItemsView {
         }
     }
     fn ready(&mut self) {
-        self.item_add_button = self.base.try_get_node_as("ItemAddDialogButton");
+        self.item_add_button = self.base.try_get_node_as("VBoxContainer/MarginContainer/ItemAddDialogButton");
         self.item_add_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
@@ -104,7 +104,7 @@ impl ControlVirtual for ItemsView {
                 0,
             );
         });
-        self.item_modify_view = self.base.try_get_node_as("../ItemModifyView");
+        self.item_modify_view = self.base.try_get_node_as("../../ItemModifyView");
         self.item_modify_view.as_mut().map(|view| {
             view.bind_mut().connect(
                 "dialog_closed".into(),
@@ -112,7 +112,7 @@ impl ControlVirtual for ItemsView {
                 0,
             );
         });
-        self.items_grid = self.base.try_get_node_as("ItemsListScrollContainer/ItemsListGridContainer");
+        self.items_grid = self.base.try_get_node_as("VBoxContainer/ItemsListScrollContainer/ItemsListGridContainer");
 
         if self.is_visible() {
             self.refresh_items_list();
