@@ -182,11 +182,11 @@ impl PanelVirtual for ListModifyView {
         }
     }
     fn ready(&mut self) {
-        self.name_line_edit = self.base.try_get_node_as("ListNameLineEdit");
-        self.description_text_edit = self.base.try_get_node_as("ListDescriptionTextEdit");
-        self.items_in_grid = self.base.try_get_node_as("ListItemsInScrollContainer/ListItemsInGridContainer");
-        self.items_out_grid = self.base.try_get_node_as("ListItemsOutScrollContainer/ListItemsOutGridContainer");
-        self.apply_button = self.base.try_get_node_as("ListApplyButton");
+        self.name_line_edit = self.base.try_get_node_as("VBoxContainer/ListNameLineEdit");
+        self.description_text_edit = self.base.try_get_node_as("VBoxContainer/ListDescriptionTextEdit");
+        self.items_in_grid = self.base.try_get_node_as("VBoxContainer/VBoxContainer/ListItemsInScrollContainer/ListItemsInGridContainer");
+        self.items_out_grid = self.base.try_get_node_as("VBoxContainer/VBoxContainer/ListItemsOutScrollContainer/ListItemsOutGridContainer");
+        self.apply_button = self.base.try_get_node_as("VBoxContainer/BottomMarginContainer/ListApplyButton");
         self.apply_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),

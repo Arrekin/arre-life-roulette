@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://ccl2262542mx2"]
+[gd_scene load_steps=3 format=3 uid="uid://ccl2262542mx2"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_20myd"]
+font_size = 30
 
 [node name="Root" type="Node2D"]
 
@@ -348,114 +351,103 @@ text = "Close"
 
 [node name="ListModifyView" type="ListModifyView" parent="UI"]
 visible = false
-offset_right = 1153.0
-offset_bottom = 652.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme = ExtResource("1_666we")
 
-[node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ListModifyView"]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -365.5
-offset_top = 86.0
-offset_right = 366.5
-offset_bottom = 124.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopMarginContainer" type="MarginContainer" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="TitleLabel" type="Label" parent="UI/ListModifyView/VBoxContainer/TopMarginContainer"]
+layout_mode = 2
+text = "Create New List"
+label_settings = SubResource("LabelSettings_20myd")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView/VBoxContainer"]
+custom_minimum_size = Vector2(800, 0)
+layout_mode = 2
+size_flags_horizontal = 4
 placeholder_text = "List Name"
 
-[node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -361.5
-offset_top = 135.0
-offset_right = 370.5
-offset_bottom = 205.0
-grow_horizontal = 2
+[node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView/VBoxContainer"]
+custom_minimum_size = Vector2(800, 200)
+layout_mode = 2
+size_flags_horizontal = 4
 placeholder_text = "List Description"
 
-[node name="ListApplyButton" type="Button" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -165.5
-offset_top = 567.0
-offset_right = 163.5
-offset_bottom = 608.0
-grow_horizontal = 2
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HSeparator" type="HSeparator" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ListItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ListItemsInScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4
+
+[node name="HSeparator2" type="HSeparator" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ListItemsOutScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ListItemsOutGridContainer" type="GridContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ListItemsOutScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 3
+theme_override_constants/v_separation = 3
+columns = 4
+
+[node name="HSeparator3" type="HSeparator" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+
+[node name="BottomMarginContainer" type="MarginContainer" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 30
+
+[node name="ListApplyButton" type="Button" parent="UI/ListModifyView/VBoxContainer/BottomMarginContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
 text = "Add List"
 
 [node name="DialogCloseButton" type="Button" parent="UI/ListModifyView"]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 401.0
-offset_top = 30.0
-offset_right = 528.0
-offset_bottom = 71.0
-grow_horizontal = 2
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -158.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 43.0
+grow_horizontal = 0
 text = "Close"
-
-[node name="HSeparator" type="HSeparator" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -576.5
-offset_top = 214.0
-offset_right = 575.5
-offset_bottom = 243.0
-grow_horizontal = 2
-
-[node name="ListItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -562.5
-offset_top = 236.0
-offset_right = 559.5
-offset_bottom = 376.0
-grow_horizontal = 2
-
-[node name="ListItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/ListItemsInScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
-columns = 4
-
-[node name="HSeparator2" type="HSeparator" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -575.5
-offset_top = 373.0
-offset_right = 581.5
-offset_bottom = 406.0
-grow_horizontal = 2
-
-[node name="ListItemsOutScrollContainer" type="ScrollContainer" parent="UI/ListModifyView"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -564.5
-offset_top = 401.0
-offset_right = 557.5
-offset_bottom = 541.0
-grow_horizontal = 2
-
-[node name="ListItemsOutGridContainer" type="GridContainer" parent="UI/ListModifyView/ListItemsOutScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
-columns = 4
