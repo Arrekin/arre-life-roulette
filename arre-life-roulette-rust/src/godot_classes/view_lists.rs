@@ -8,7 +8,7 @@ use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
 use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
 use crate::godot_classes::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_lists_modify::ListModifyView;
+use crate::godot_classes::view_list_modify::ListModifyView;
 use crate::godot_classes::view_roll::RollView;
 use crate::list::List;
 

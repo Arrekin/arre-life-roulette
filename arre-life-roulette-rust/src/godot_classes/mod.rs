@@ -5,7 +5,7 @@ pub mod view_items;
 pub mod view_lists;
 pub mod tab_view_selector;
 pub mod selection_button;
-pub mod view_lists_modify;
+pub mod view_list_modify;
 pub mod signals;
 pub mod view_roll;
 pub mod resources;

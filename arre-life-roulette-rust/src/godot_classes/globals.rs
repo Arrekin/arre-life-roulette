@@ -33,8 +33,6 @@ impl NodeVirtual for Globals {
         List::create_new(&connection, "Demo List 2".to_string(), "Demo List 2 description".to_string()).unwrap();
         List::create_new(&connection, "Demo List 3".to_string(), "Demo List 3 description".to_string()).unwrap();
 
-
-
         Self {
             base,
             connection,

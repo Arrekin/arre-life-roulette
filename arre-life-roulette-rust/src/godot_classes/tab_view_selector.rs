@@ -1,5 +1,5 @@
 use godot::builtin::{Callable};
-use godot::engine::{Button, HBoxContainer};
+use godot::engine::{Button, DisplayServer, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
 use godot::prelude::*;
 use crate::godot_classes::signals::Signals;
@@ -49,6 +49,9 @@ impl HBoxContainerVirtual for TabViewSelector {
         }
     }
     fn ready(&mut self) {
+        // TODO: Find a better place for global config
+        DisplayServer::singleton().window_set_min_size(Vector2i::new(1024, 768), 0);
+
         self.add_theme_constant_override("separation".into(), 20);
 
         self.items_view_button = self.base.try_get_node_as("ItemsViewButton");

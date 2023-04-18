@@ -92,9 +92,9 @@ impl PanelVirtual for ItemModifyView {
         }
     }
     fn ready(&mut self) {
-        self.name_line_edit = self.base.try_get_node_as("ItemNameLineEdit");
-        self.description_text_edit = self.base.try_get_node_as("ItemDescriptionTextEdit");
-        self.apply_button = self.base.try_get_node_as("ItemApplyButton");
+        self.name_line_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemNameLineEdit");
+        self.description_text_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemDescriptionTextEdit");
+        self.apply_button = self.base.try_get_node_as("VBoxContainer/BottomMarginContainer/ItemApplyButton");
         self.apply_button.as_mut().map(|button| {
             button.connect(
                 "button_up".into(),
