@@ -281,15 +281,16 @@ text = "List: ########"
 horizontal_alignment = 1
 
 [node name="WorkCancelButton" type="Button" parent="UI/RollView"]
+self_modulate = Color(1, 0, 0.0588235, 1)
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = 337.0
-offset_top = 20.0
-offset_right = 540.0
-offset_bottom = 68.0
-grow_horizontal = 2
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -224.0
+offset_top = 33.0
+offset_right = -21.0
+offset_bottom = 81.0
+grow_horizontal = 0
 theme_override_font_sizes/font_size = 30
 text = "Cancel"
 
@@ -351,12 +352,14 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_bottom = 30
 
 [node name="ItemApplyButton" type="Button" parent="UI/ItemModifyView/VBoxContainer/BottomMarginContainer"]
-custom_minimum_size = Vector2(200, 0)
+self_modulate = Color(0, 1, 0.059495, 1)
+custom_minimum_size = Vector2(400, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Add Item"
 
 [node name="DialogCloseButton" type="Button" parent="UI/ItemModifyView"]
+self_modulate = Color(1, 0, 0.0588235, 1)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -454,12 +457,14 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_bottom = 30
 
 [node name="ListApplyButton" type="Button" parent="UI/ListModifyView/VBoxContainer/BottomMarginContainer"]
-custom_minimum_size = Vector2(200, 0)
+self_modulate = Color(0, 1, 0.0588235, 1)
+custom_minimum_size = Vector2(400, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Add List"
 
 [node name="DialogCloseButton" type="Button" parent="UI/ListModifyView"]
+self_modulate = Color(1, 0, 0.0588235, 1)
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0

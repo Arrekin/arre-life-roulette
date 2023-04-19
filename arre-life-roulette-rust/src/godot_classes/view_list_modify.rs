@@ -1,5 +1,5 @@
 use godot::builtin::{Callable};
-use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, GridContainer};
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, GridContainer, Label};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
@@ -9,6 +9,9 @@ use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, C
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
 use crate::list::List;
+
+const UI_TEXT_CREATE: &str = "Create List";
+const UI_TEXT_MODIFY: &str = "Modify List";
 
 enum Mode {
     Add,
@@ -28,6 +31,7 @@ pub struct ListModifyView {
     item_selection_button: Gd<PackedScene>,
 
     // cached elements
+    title_label: Option<Gd<Label>>,
     name_line_edit: Option<Gd<LineEdit>>,
     description_text_edit: Option<Gd<TextEdit>>,
     items_in_grid: Option<Gd<GridContainer>>,
@@ -76,13 +80,23 @@ impl ListModifyView {
         self.needs_full_refresh = true;
     }
 
-    fn refresh_name_and_description_display(&mut self) {
+    fn refresh_ui_display(&mut self) {
         self.name_line_edit.as_mut().map(|line_edit|
             line_edit.set_text(self.list.name.clone().into())
         );
         self.description_text_edit.as_mut().map(|text_edit|
             text_edit.set_text(self.list.description.clone().into())
         );
+        match self.mode {
+            Mode::Add => {
+                self.title_label.as_mut().map(|label| label.set_text(UI_TEXT_CREATE.into()));
+                self.apply_button.as_mut().map(|button| button.set_text(UI_TEXT_CREATE.into()));
+            }
+            Mode::Edit => {
+                self.title_label.as_mut().map(|label| label.set_text(UI_TEXT_MODIFY.into()));
+                self.apply_button.as_mut().map(|button| button.set_text(UI_TEXT_MODIFY.into()));
+            }
+        };
     }
 
     fn refresh_items_in_display(&mut self) {
@@ -164,6 +178,7 @@ impl PanelVirtual for ListModifyView {
 
             item_selection_button: load(SELECTION_BUTTON_SCENE),
 
+            title_label: None,
             name_line_edit: None,
             description_text_edit: None,
             items_in_grid: None,
@@ -182,6 +197,7 @@ impl PanelVirtual for ListModifyView {
         }
     }
     fn ready(&mut self) {
+        self.title_label = self.base.try_get_node_as("VBoxContainer/TopMarginContainer/TitleLabel");
         self.name_line_edit = self.base.try_get_node_as("VBoxContainer/ListNameLineEdit");
         self.description_text_edit = self.base.try_get_node_as("VBoxContainer/ListDescriptionTextEdit");
         self.items_in_grid = self.base.try_get_node_as("VBoxContainer/VBoxContainer/ListItemsInScrollContainer/ListItemsInGridContainer");
@@ -206,7 +222,7 @@ impl PanelVirtual for ListModifyView {
 
     fn process(&mut self, _delta: f64) {
         if self.needs_full_refresh {
-            self.refresh_name_and_description_display();
+            self.refresh_ui_display();
             self.refresh_items_in_display();
             self.refresh_items_out_display();
             self.needs_full_refresh = false;

@@ -1,9 +1,12 @@
 use godot::builtin::{Callable};
-use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt};
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Label};
 use godot::prelude::*;
 use crate::godot_classes::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
+
+const UI_TEXT_CREATE: &str = "Create Item";
+const UI_TEXT_MODIFY: &str = "Modify Item";
 
 enum Mode {
     Add,
@@ -17,6 +20,7 @@ pub struct ItemModifyView {
     base: Base<Panel>,
 
     // cached elements
+    title_label: Option<Gd<Label>>,
     name_line_edit: Option<Gd<LineEdit>>,
     description_text_edit: Option<Gd<TextEdit>>,
     apply_button: Option<Gd<Button>>,
@@ -55,6 +59,16 @@ impl ItemModifyView {
         self.description_text_edit.as_mut().map(|text_edit|
             text_edit.set_text(self.item.description.clone().into())
         );
+        match self.mode {
+            Mode::Add => {
+                self.title_label.as_mut().map(|label| label.set_text(UI_TEXT_CREATE.into()));
+                self.apply_button.as_mut().map(|button| button.set_text(UI_TEXT_CREATE.into()));
+            }
+            Mode::Edit => {
+                self.title_label.as_mut().map(|label| label.set_text(UI_TEXT_MODIFY.into()));
+                self.apply_button.as_mut().map(|button| button.set_text(UI_TEXT_MODIFY.into()));
+            }
+        }
     }
 
     #[func]
@@ -82,6 +96,7 @@ impl PanelVirtual for ItemModifyView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
+            title_label: None,
             name_line_edit: None,
             description_text_edit: None,
             apply_button: None,
@@ -92,6 +107,7 @@ impl PanelVirtual for ItemModifyView {
         }
     }
     fn ready(&mut self) {
+        self.title_label = self.base.try_get_node_as("VBoxContainer/TopMarginContainer/TitleLabel");
         self.name_line_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemNameLineEdit");
         self.description_text_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemDescriptionTextEdit");
         self.apply_button = self.base.try_get_node_as("VBoxContainer/BottomMarginContainer/ItemApplyButton");
