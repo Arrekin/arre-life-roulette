@@ -10,8 +10,8 @@ mod godot_classes;
 use godot::engine::class_macros::auto_register_classes;
 use godot::engine::Engine;
 use godot::prelude::*;
-use crate::godot_classes::globals::Globals;
-use crate::godot_classes::signals::Signals;
+use crate::godot_classes::singletons::globals::{Globals};
+use crate::godot_classes::singletons::signals::Signals;
 
 struct LifeRoulette;
 

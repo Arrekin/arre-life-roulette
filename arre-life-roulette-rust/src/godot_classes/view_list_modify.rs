@@ -3,7 +3,7 @@ use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Gr
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
-use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::utils::get_singleton;

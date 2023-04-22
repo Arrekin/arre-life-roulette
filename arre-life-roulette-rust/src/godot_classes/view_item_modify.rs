@@ -1,7 +1,7 @@
 use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Label};
 use godot::prelude::*;
-use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
 

@@ -2,7 +2,7 @@ use godot::builtin::{Callable};
 use godot::engine::{Button, DisplayServer, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
 use godot::prelude::*;
-use crate::godot_classes::signals::Signals;
+use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 
 #[derive(GodotClass)]

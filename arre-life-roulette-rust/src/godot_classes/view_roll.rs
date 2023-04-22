@@ -2,7 +2,7 @@ use godot::builtin::{Callable};
 use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
 use rand::Rng;
-use crate::godot_classes::globals::{Globals};
+use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::utils::get_singleton;
 use crate::list::List;
 
