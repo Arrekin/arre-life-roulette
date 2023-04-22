@@ -2,6 +2,8 @@ use godot::builtin::{Callable};
 use godot::engine::{Button, DisplayServer, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
 use godot::prelude::*;
+use crate::errors::ArreError;
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 
@@ -55,28 +57,37 @@ impl HBoxContainerVirtual for TabViewSelector {
         self.add_theme_constant_override("separation".into(), 20);
 
         self.items_view_button = self.base.try_get_node_as("ItemsViewButton");
-        self.items_view_button.as_mut().map(|button|
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_item_view_button_up"),
-            0,
-            )
+        self.items_view_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("TabViewSelector::items_view_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_item_view_button_up"),
+                0,
+                );
+            }
         );
         self.lists_view_button = self.base.try_get_node_as("ListsViewButton");
-        self.lists_view_button.as_mut().map(|button|
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_list_view_button_up"),
-                0,
-            )
+        self.lists_view_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("TabViewSelector::lists_view_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_list_view_button_up"),
+                    0,
+                );
+            }
         );
         self.tags_view_button = self.base.try_get_node_as("TagsViewButton");
-        self.tags_view_button.as_mut().map(|button|
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_tag_view_button_up"),
-                0,
-            )
+        self.tags_view_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("TabViewSelector::tags_view_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_tag_view_button_up"),
+                    0,
+                );
+            }
         );
     }
 }
