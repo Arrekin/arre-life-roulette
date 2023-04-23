@@ -10,8 +10,9 @@ pub struct Logger {
     #[base]
     base: Base<Node>,
 
-    logs: VecDeque<GodotString>,
     max_logs_entries: usize,
+
+    pub logs: VecDeque<GodotString>,
 }
 
 #[godot_api]

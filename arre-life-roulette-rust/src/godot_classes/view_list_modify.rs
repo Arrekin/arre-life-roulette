@@ -4,7 +4,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
+use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
@@ -176,7 +176,7 @@ impl PanelVirtual for ListModifyView {
         Self {
             base,
 
-            item_selection_button: load(SELECTION_BUTTON_SCENE),
+            item_selection_button: load(SELECTION_BUTTON_PREFAB),
 
             title_label: None,
             name_line_edit: None,

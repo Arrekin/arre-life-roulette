@@ -4,7 +4,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::SELECTION_BUTTON_SCENE;
+use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
@@ -85,7 +85,7 @@ impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            item_selection_button: load(SELECTION_BUTTON_SCENE),
+            item_selection_button: load(SELECTION_BUTTON_PREFAB),
 
             item_add_button: None,
             item_modify_view: None,

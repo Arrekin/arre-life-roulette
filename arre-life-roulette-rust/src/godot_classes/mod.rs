@@ -8,3 +8,4 @@ pub mod view_list_modify;
 pub mod view_roll;
 pub mod resources;
 pub mod singletons;
+pub mod view_logs;
