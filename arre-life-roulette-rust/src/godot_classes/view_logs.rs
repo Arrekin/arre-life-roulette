@@ -1,18 +1,11 @@
-use godot::builtin::{Callable};
-use godot::engine::{Control, ControlVirtual, Button, GridContainer, VBoxContainer, RichTextLabel, InputEvent};
+use godot::engine::{Control, ControlVirtual, VBoxContainer, RichTextLabel, InputEvent};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::ArreError;
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::{LOG_ENTRY_PREFAB, LOGS_VIEW_TOGGLE, SELECTION_BUTTON_PREFAB};
-use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
 use crate::godot_classes::singletons::logger::Logger;
-use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
-use crate::godot_classes::view_list_modify::ListModifyView;
-use crate::godot_classes::view_roll::RollView;
-use crate::list::List;
 
 #[derive(GodotClass)]
 #[class(base=Control)]
@@ -35,13 +28,11 @@ impl LogsView {
         let mut logger = get_singleton::<Logger>("Logger");
         let mut logger = logger.bind_mut();
         self.logs_vboxcontainer.as_mut().map(|vbox| {
-            // First delete all log entries
+            // First delete all existing UI log entries
             for mut child in vbox.get_children(false).iter_shared() {
                 child.queue_free();
             }
             // Then add new ones
-            godot_print!( "LogsView::refresh_display");
-            godot_print!( "Logs count: {}", logger.logs.len());
             for log in logger.logs.clone() {
                 let log_entry = self.log_entry_prefab.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED);
                 if let Some(log_node) = log_entry {

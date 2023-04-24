@@ -58,7 +58,7 @@ impl HBoxContainerVirtual for TabViewSelector {
 
         self.items_view_button = self.base.try_get_node_as("ItemsViewButton");
         self.items_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::items_view_button".into())),
+            || log_error(ArreError::NullGd("TabViewSelector::ready::items_view_button".into())),
             |button| {
                 button.connect(
                     "button_up".into(),
@@ -69,7 +69,7 @@ impl HBoxContainerVirtual for TabViewSelector {
         );
         self.lists_view_button = self.base.try_get_node_as("ListsViewButton");
         self.lists_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::lists_view_button".into())),
+            || log_error(ArreError::NullGd("TabViewSelector::ready::lists_view_button".into())),
             |button| {
                 button.connect(
                     "button_up".into(),
@@ -80,7 +80,7 @@ impl HBoxContainerVirtual for TabViewSelector {
         );
         self.tags_view_button = self.base.try_get_node_as("TagsViewButton");
         self.tags_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::tags_view_button".into())),
+            || log_error(ArreError::NullGd("TabViewSelector::ready::tags_view_button".into())),
             |button| {
                 button.connect(
                     "button_up".into(),

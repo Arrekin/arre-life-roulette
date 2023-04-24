@@ -3,9 +3,11 @@ use godot::engine::{Control, ControlVirtual, Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
+use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_item_modify::ItemModifyView;
@@ -97,22 +99,29 @@ impl ControlVirtual for ItemsView {
     }
     fn ready(&mut self) {
         self.item_add_button = self.base.try_get_node_as("VBoxContainer/MarginContainer/ItemAddDialogButton");
-        self.item_add_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_item_add_button_up"),
-                0,
-            );
-        });
+        self.item_add_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ItemsView::ready::item_add_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_item_add_button_up"),
+                    0,
+                );
+            }
+        );
         self.item_modify_view = self.base.try_get_node_as("../../ItemModifyView");
-        self.item_modify_view.as_mut().map(|view| {
-            view.bind_mut().connect(
-                "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_items_list"),
-                0,
-            );
-        });
+        self.item_modify_view.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ItemsView::ready::item_modify_view".into())),
+            |view| {
+                view.bind_mut().connect(
+                    "dialog_closed".into(),
+                    Callable::from_object_method(self.base.share(), "refresh_items_list"),
+                    0,
+                );
+            }
+        );
         self.items_grid = self.base.try_get_node_as("VBoxContainer/ItemsListScrollContainer/ItemsListGridContainer");
+        if self.items_grid.is_none() { log_error(ArreError::NullGd("ItemsView::ready::items_grid".into())) }
 
         if self.is_visible() {
             self.refresh_items_list();

@@ -3,9 +3,11 @@ use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Gr
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
+use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
 use crate::list::List;
@@ -58,8 +60,22 @@ impl ListModifyView {
 
     #[func]
     fn on_apply_list_button_up(&mut self) {
-        let new_name = self.name_line_edit.as_ref().map(|line_edit| line_edit.get_text()).unwrap().to_string();
-        let new_description = self.description_text_edit.as_ref().map(|text_edit| text_edit.get_text()).unwrap().to_string();
+        let new_name = {
+            if let Some(line_edit) = self.name_line_edit.as_ref() {
+                line_edit.get_text().to_string()
+            } else {
+                log_error(ArreError::NullGd("ListModifyView::on_apply_list_button_up::name_line_edit".into()));
+                return;
+            }
+        };
+        let new_description = {
+            if let Some(text_edit) = self.description_text_edit.as_ref() {
+                text_edit.get_text().to_string()
+            } else {
+                log_error(ArreError::NullGd("ListModifyView::on_apply_list_button_up::description_text_edit".into()));
+                return;
+            }
+        };
 
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
@@ -103,8 +119,18 @@ impl ListModifyView {
         // Clear old and create a button for each item
         self.items_in_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
         self.items_in_grid_elements.extend(
-            self.list.items.iter().map(|item| {
-                let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
+            self.list.items.iter().filter_map(|item| {
+                let instance = {
+                    if let Some(instance) = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED) {
+                        instance
+                    } else {
+                        log_error(ArreError::InstantiateFailed(
+                            SELECTION_BUTTON_PREFAB.into(),
+                            "ListViewModify::refresh_items_in_display".into()
+                        ));
+                        return None;
+                    }
+                };
                 self.items_in_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
                 let mut button = instance.cast::<SelectionButton>();
                 {
@@ -115,7 +141,7 @@ impl ListModifyView {
                         in_or_out: InOrOut::In
                     }));
                 }
-                button
+                Some(button)
             })
         );
     }
@@ -124,8 +150,18 @@ impl ListModifyView {
         // Clear old and create a button for each item
         self.items_out_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
         self.items_out_grid_elements.extend(
-            self.items_out.iter().map(|item| {
-                let instance = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
+            self.items_out.iter().filter_map(|item| {
+                let instance = {
+                    if let Some(instance) = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED) {
+                        instance
+                    } else {
+                        log_error(ArreError::InstantiateFailed(
+                            SELECTION_BUTTON_PREFAB.into(),
+                            "ListViewModify::refresh_items_out_display".into())
+                        );
+                        return None;
+                    }
+                };
                 self.items_out_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
                 let mut button = instance.cast::<SelectionButton>();
                 {
@@ -136,7 +172,7 @@ impl ListModifyView {
                         in_or_out: InOrOut::Out
                     }));
                 }
-                button
+                Some(button)
             })
         );
     }
@@ -198,26 +234,37 @@ impl PanelVirtual for ListModifyView {
     }
     fn ready(&mut self) {
         self.title_label = self.base.try_get_node_as("VBoxContainer/TopMarginContainer/TitleLabel");
+        if self.title_label.is_none() { log_error(ArreError::NullGd("ListModifyView::ready::title_label".into())); }
         self.name_line_edit = self.base.try_get_node_as("VBoxContainer/ListNameLineEdit");
+        if self.name_line_edit.is_none() { log_error(ArreError::NullGd("ListModifyView::ready::name_line_edit".into())); }
         self.description_text_edit = self.base.try_get_node_as("VBoxContainer/ListDescriptionTextEdit");
+        if self.description_text_edit.is_none() { log_error(ArreError::NullGd("ListModifyView::ready::description_text_edit".into())); }
         self.items_in_grid = self.base.try_get_node_as("VBoxContainer/VBoxContainer/ListItemsInScrollContainer/ListItemsInGridContainer");
+        if self.items_in_grid.is_none() { log_error(ArreError::NullGd("ListModifyView::ready::items_in_grid".into())); }
         self.items_out_grid = self.base.try_get_node_as("VBoxContainer/VBoxContainer/ListItemsOutScrollContainer/ListItemsOutGridContainer");
+        if self.items_out_grid.is_none() { log_error(ArreError::NullGd("ListModifyView::ready::items_out_grid".into())); }
         self.apply_button = self.base.try_get_node_as("VBoxContainer/BottomMarginContainer/ListApplyButton");
-        self.apply_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_apply_list_button_up"),
-                0,
-            )
-        });
+        self.apply_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListModifyView::ready::apply_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_apply_list_button_up"),
+                    0,
+                );
+            }
+        );
         self.close_button = self.base.try_get_node_as("DialogCloseButton");
-        self.close_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
-                0,
-            )
-        });
+        self.close_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListModifyView::ready::close_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
+                    0,
+                );
+            }
+        );
     }
 
     fn process(&mut self, _delta: f64) {

@@ -11,6 +11,10 @@ pub enum Content {
     List(List),
 }
 
+pub trait OnClickBehavior {
+    fn on_click(&mut self, content: &Content);
+}
+
 #[derive(GodotClass)]
 #[class(base=Button)]
 pub struct SelectionButton {
@@ -41,7 +45,6 @@ impl SelectionButton {
 
     #[func]
     fn on_left_button_up(&mut self) {
-        godot_print!("SelectionButton::on_left_button_up");
         self.on_left_click_behavior.as_mut().map(|behavior| {
             behavior.on_click(&self.content);
         });
@@ -49,7 +52,6 @@ impl SelectionButton {
 
     #[func]
     fn on_right_button_up(&mut self) {
-        godot_print!("SelectionButton::on_right_button_up");
         self.on_right_click_behavior.as_mut().map(|behavior| {
             behavior.on_click(&self.content);
         });
@@ -110,10 +112,3 @@ impl ButtonVirtual for SelectionButton {
         );
     }
 }
-
-pub trait OnClickBehavior {
-    fn on_click(&mut self, content: &Content);
-}
-
-
-

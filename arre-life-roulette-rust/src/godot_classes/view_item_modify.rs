@@ -1,7 +1,9 @@
 use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Label};
 use godot::prelude::*;
+use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
 use crate::item::Item;
 
@@ -38,15 +40,29 @@ impl ItemModifyView {
 
     #[func]
     fn on_apply_item_button_up(&mut self) {
-        let new_name = self.name_line_edit.as_ref().map(|line_edit| line_edit.get_text()).unwrap().to_string();
-        let new_description = self.description_text_edit.as_ref().map(|text_edit| text_edit.get_text()).unwrap().to_string();
+        let new_name = {
+            if let Some(line_edit) = self.name_line_edit.as_ref() {
+                line_edit.get_text().to_string()
+            } else {
+                log_error(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::name_line_edit".into()));
+                return;
+            }
+        };
+        let new_description = {
+            if let Some(text_edit) =  self.description_text_edit.as_ref() {
+                text_edit.get_text().to_string()
+            } else {
+                log_error(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::description_text_edit".into()));
+                return;
+            }
+        };
 
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
 
         self.item.name = new_name;
         self.item.description = new_description;
-        self.item.save(connection).unwrap();
+        self.item.save(connection).unwrap_or_else(|e| log_error(e));
 
         self.refresh_display();
     }
@@ -108,23 +124,32 @@ impl PanelVirtual for ItemModifyView {
     }
     fn ready(&mut self) {
         self.title_label = self.base.try_get_node_as("VBoxContainer/TopMarginContainer/TitleLabel");
+        if self.title_label.is_none() { log_error(ArreError::NullGd("ItemModifyView::ready::title_label".into())); }
         self.name_line_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemNameLineEdit");
+        if self.name_line_edit.is_none() { log_error(ArreError::NullGd("ItemModifyView::ready::name_line_edit".into())); }
         self.description_text_edit = self.base.try_get_node_as("VBoxContainer/CentralMarginContainer/VBoxContainer/ItemDescriptionTextEdit");
+        if self.description_text_edit.is_none() { log_error(ArreError::NullGd("ItemModifyView::ready::description_text_edit".into())); }
         self.apply_button = self.base.try_get_node_as("VBoxContainer/BottomMarginContainer/ItemApplyButton");
-        self.apply_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_apply_item_button_up"),
-                0,
-            )
-        });
+        self.apply_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ItemModifyView::ready::apply_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_apply_item_button_up"),
+                    0,
+                );
+            }
+        );
         self.close_button = self.base.try_get_node_as("DialogCloseButton");
-        self.close_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
-                0,
-            )
-        });
+        self.close_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ItemModifyView::ready::close_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
+                    0,
+                );
+            }
+        );
     }
 }

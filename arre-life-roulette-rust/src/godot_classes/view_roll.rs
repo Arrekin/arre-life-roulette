@@ -2,7 +2,9 @@ use godot::builtin::{Callable};
 use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
 use rand::Rng;
+use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
 use crate::list::List;
 
@@ -52,28 +54,28 @@ impl RollView {
 
     #[func]
     pub fn refresh_view(&mut self){
-        self.list_name_label.as_mut().unwrap().set_text(self.list.name.clone().into());
+        self.list_name_label.as_mut().map(|label| label.set_text(self.list.name.clone().into()));
         match self.roll_state {
             RollState::AwaitingRoll => {
-                self.awaiting_subview.as_mut().unwrap().set_visible(true);
-                self.work_assigned_subview.as_mut().unwrap().set_visible(false);
-                self.work_finished_subview.as_mut().unwrap().set_visible(false);
+                self.awaiting_subview.as_mut().map(|view| view.set_visible(true));
+                self.work_assigned_subview.as_mut().map(|view| view.set_visible(false));
+                self.work_finished_subview.as_mut().map(|view| view.set_visible(false));
             },
             RollState::Rolling => {
                 // TODO
             },
             RollState::WorkAssigned => {
-                self.awaiting_subview.as_mut().unwrap().set_visible(false);
-                self.work_assigned_subview.as_mut().unwrap().set_visible(true);
-                self.work_finished_subview.as_mut().unwrap().set_visible(false);
+                self.awaiting_subview.as_mut().map(|view| view.set_visible(false));
+                self.work_assigned_subview.as_mut().map(|view| view.set_visible(true));
+                self.work_finished_subview.as_mut().map(|view| view.set_visible(false));
                 let work_item = &self.list.items[self.work_item];
-                self.item_name_label.as_mut().unwrap().set_text(work_item.name.clone().into());
-                self.item_description_label.as_mut().unwrap().set_text(work_item.description.clone().into());
+                self.item_name_label.as_mut().map(|label| label.set_text(work_item.name.clone().into()));
+                self.item_description_label.as_mut().map(|label| label.set_text(work_item.description.clone().into()));
             },
             RollState::WorkFinished => {
-                self.awaiting_subview.as_mut().unwrap().set_visible(false);
-                self.work_assigned_subview.as_mut().unwrap().set_visible(false);
-                self.work_finished_subview.as_mut().unwrap().set_visible(true);
+                self.awaiting_subview.as_mut().map(|view| view.set_visible(false));
+                self.work_assigned_subview.as_mut().map(|view| view.set_visible(false));
+                self.work_finished_subview.as_mut().map(|view| view.set_visible(true));
             }
         }
     }
@@ -84,7 +86,7 @@ impl RollView {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
         // TODO: Instead of loading full items, load only their Ids
-        self.list.load_items(connection).unwrap();
+        self.list.load_items(connection).unwrap_or_else(|e| log_error(e));
 
         let mut rng = rand::thread_rng();
         self.work_item = rng.gen_range(0..self.list.items.len());
@@ -149,53 +151,74 @@ impl PanelVirtual for RollView {
     fn ready(&mut self) {
         // main UI elements
         self.work_cancel_button = self.base.try_get_node_as("WorkCancelButton");
-        self.work_cancel_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_work_cancel_button_up"),
-                0,
-            );
-        });
+        self.work_cancel_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("RollView::ready::work_cancel_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_work_cancel_button_up"),
+                    0,
+                );
+            }
+        );
         self.list_name_label = self.base.try_get_node_as("ListNameLabel");
+        if self.list_name_label.is_none() { log_error(ArreError::NullGd("RollView::ready::list_name_label".into())); }
         // awaiting subview
         self.awaiting_subview = self.base.try_get_node_as("AwaitingSubview");
+        if self.awaiting_subview.is_none() { log_error(ArreError::NullGd("RollView::ready::awaiting_subview".into())); }
         self.roll_start_button = self.base.try_get_node_as("AwaitingSubview/RollStartButton");
-        self.roll_start_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_roll_start_button_up"),
-                0,
-            );
-        });
+        self.roll_start_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("RollView::ready::roll_start_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_roll_start_button_up"),
+                    0,
+                );
+            }
+        );
         // work assigned subview
         self.work_assigned_subview = self.base.try_get_node_as("WorkAssignedSubview");
+        if self.work_assigned_subview.is_none() { log_error(ArreError::NullGd("RollView::ready::work_assigned_subview".into())); }
         self.item_name_label = self.base.try_get_node_as("WorkAssignedSubview/ItemNameLabel");
+        if self.item_name_label.is_none() { log_error(ArreError::NullGd("RollView::ready::item_name_label".into())); }
         self.item_description_label = self.base.try_get_node_as("WorkAssignedSubview/ItemDescriptionLabel");
+        if self.item_description_label.is_none() { log_error(ArreError::NullGd("RollView::ready::item_description_label".into())); }
         self.work_finish_button = self.base.try_get_node_as("WorkAssignedSubview/WorkFinishButton");
-        self.work_finish_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_work_finish_button_up"),
-                0,
-            );
-        });
+        self.work_finish_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("RollView::ready::work_finish_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_work_finish_button_up"),
+                    0,
+                );
+            }
+        );
         // work finished subview
         self.work_finished_subview = self.base.try_get_node_as("WorkFinishedSubview");
+        if self.work_finished_subview.is_none() { log_error(ArreError::NullGd("RollView::ready::work_finished_subview".into())); }
         self.roll_again_button = self.base.try_get_node_as("WorkFinishedSubview/RollAgainButton");
-        self.roll_again_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_roll_again_button_up"),
-                0,
-            );
-        });
+        self.roll_again_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("RollView::ready::roll_again_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_roll_again_button_up"),
+                    0,
+                );
+            }
+        );
         self.close_button = self.base.try_get_node_as("WorkFinishedSubview/CloseButton");
-        self.close_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_close_button_up"),
-                0,
-            );
-        });
+        self.close_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("RollView::ready::close_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_close_button_up"),
+                    0,
+                );
+            }
+        );
     }
 }

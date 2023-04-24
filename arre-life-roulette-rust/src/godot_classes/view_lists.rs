@@ -3,9 +3,11 @@ use godot::engine::{Control, ControlVirtual, Button, GridContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
+use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
+use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::view_list_modify::ListModifyView;
@@ -36,11 +38,14 @@ pub struct ListsView {
 impl ListsView {
     #[func]
     fn on_list_add_button_up(&mut self) {
-        self.list_modify_view.as_mut().map(|view| {
-            let mut view = view.bind_mut();
-            view.set_mode_add();
-            view.set_visible(true);
-        });
+        self.list_modify_view.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListsView::on_list_add_button_up::list_modify_view".to_string())),
+                |view| {
+                let mut view = view.bind_mut();
+                view.set_mode_add();
+                view.set_visible(true);
+            }
+        );
     }
 
     #[func]
@@ -64,8 +69,15 @@ impl ListsView {
         // Clear old and create a button for each item
         self.lists_grid_elements.drain(..).for_each(|mut list_btn| list_btn.bind_mut().queue_free());
         self.lists_grid_elements.extend(
-            self.lists.iter().map(|list| {
-                    let instance = self.list_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED).unwrap();
+            self.lists.iter().filter_map(|list| {
+                    let instance = {
+                        if let Some(instance) = self.list_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED) {
+                            instance
+                        } else {
+                            log_error(ArreError::NullGd("ListsView::refresh_lists_list::list_selection_button".into()));
+                            return None;
+                        }
+                    };
                     self.lists_grid.as_mut().map(|grid| grid.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED));
                     let mut button = instance.cast::<SelectionButton>();
                     {
@@ -78,7 +90,7 @@ impl ListsView {
                             parent: self_reference.share(),
                         }));
                     }
-                    button
+                    Some(button)
             })
         );
     }
@@ -102,30 +114,40 @@ impl ControlVirtual for ListsView {
     }
     fn ready(&mut self) {
         self.list_add_button = self.base.try_get_node_as("VBoxContainer/MarginContainer/ListAddDialogButton");
-        self.list_add_button.as_mut().map(|button| {
-            button.connect(
-                "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_list_add_button_up"),
-                0,
-            );
-        });
+        self.list_add_button.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListsView::ready::list_add_button".into())),
+            |button| {
+                button.connect(
+                    "button_up".into(),
+                    Callable::from_object_method(self.base.share(), "on_list_add_button_up"),
+                    0,
+                );
+            }
+        );
         self.list_roll_view = self.base.try_get_node_as("../../RollView");
-        self.list_roll_view.as_mut().map(|view| {
-            view.bind_mut().connect(
-                "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_lists_list"),
-                0,
-            );
-        });
+        self.list_roll_view.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListsView::ready::list_roll_view".into())),
+            |view| {
+                view.bind_mut().connect(
+                    "dialog_closed".into(),
+                    Callable::from_object_method(self.base.share(), "refresh_lists_list"),
+                    0,
+                );
+            }
+        );
         self.list_modify_view = self.base.try_get_node_as("../../ListModifyView");
-        self.list_modify_view.as_mut().map(|view| {
-            view.bind_mut().connect(
-                "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_lists_list"),
-                0,
-            );
-        });
+        self.list_modify_view.as_mut().map_or_else(
+            || log_error(ArreError::NullGd("ListsView::ready::list_modify_view".into())),
+            |view| {
+                view.bind_mut().connect(
+                    "dialog_closed".into(),
+                    Callable::from_object_method(self.base.share(), "refresh_lists_list"),
+                    0,
+                );
+            }
+        );
         self.lists_grid = self.base.try_get_node_as("VBoxContainer/ListsListScrollContainer/ListsListGridContainer");
+        if self.lists_grid.is_none() { log_error(ArreError::NullGd("ListsView::ready::lists_grid".into())) }
 
         if self.is_visible() {
             self.refresh_lists_list();
