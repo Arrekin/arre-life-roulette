@@ -1,8 +1,7 @@
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::Deref;
-use rusqlite::{Result};
-use rusqlite::types::{ToSql, FromSql, FromSqlResult};
+use rusqlite::types::{FromSql, FromSqlResult, ToSql};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Id<T> {
@@ -30,7 +29,7 @@ impl<T> From<i64> for Id<T> {
 }
 
 impl<T> ToSql for Id<T> {
-    fn to_sql(&self) -> Result<rusqlite::types::ToSqlOutput> {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput> {
         self.id.to_sql()
     }
 }

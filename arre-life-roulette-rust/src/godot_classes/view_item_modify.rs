@@ -5,7 +5,7 @@ use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
-use crate::item::Item;
+use crate::item::{Item, item_persist, item_update};
 
 const UI_TEXT_CREATE: &str = "Create Item";
 const UI_TEXT_MODIFY: &str = "Modify Item";
@@ -62,7 +62,16 @@ impl ItemModifyView {
 
         self.item.name = new_name;
         self.item.description = new_description;
-        self.item.save(connection).unwrap_or_else(|e| log_error(e));
+
+        match self.mode {
+            Mode::Add => {
+                self.mode = Mode::Edit;
+                item_persist(connection, &mut self.item)
+            },
+            Mode::Edit => {
+                item_update(connection, &self.item)
+            }
+        }.unwrap_or_else(|e| log_error(e.as_ref()));
 
         self.refresh_display();
     }

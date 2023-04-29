@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use rusqlite::{Connection, Result, Row};
-use crate::item::Item;
+use crate::errors::ArreResult;
+use crate::item::{Item, item_get_all};
 use crate::utils::Id;
 
 pub type ListId = Id<List>;
@@ -75,9 +76,9 @@ impl List {
         Ok(())
     }
 
-    pub fn get_items_not_on_list(&self, conn: &Connection) -> Result<Vec<Item>> {
+    pub fn get_items_not_on_list(&self, conn: &Connection) -> ArreResult<Vec<Item>> {
         if self.is_new {
-            return Ok(Item::get_all(conn)?)
+            return Ok(item_get_all(conn)?)
         }
         let mut stmt = conn.prepare("
             SELECT i.item_id, i.name, i.description, i.is_suspended, i.is_finished
@@ -129,21 +130,21 @@ impl List {
     }
 
     /// Add item to list. Does auto-save the change to the DB.
-    pub fn add_item(&mut self, conn: &Connection, item: Item) -> Result<()> {
+    pub fn add_item(&mut self, conn: &Connection, item: Item) -> ArreResult<()> {
         let mut stmt = conn.prepare("INSERT INTO item_list_map (list_id, item_id) VALUES (?1, ?2)")?;
-        stmt.execute([*self.id, *item.id])?;
+        stmt.execute([*self.id, *item.get_id()?])?;
         self.items.push(item);
         Ok(())
     }
 
     /// Remove item in given position from list. Does auto-save the change to the DB.
-    pub fn remove_item(&mut self, conn: &Connection, id: usize) -> Result<Item> {
+    pub fn remove_item(&mut self, conn: &Connection, id: usize) -> ArreResult<Item> {
         let item = self.items.remove(id);
         let mut stmt = conn.prepare("
             DELETE FROM item_list_map
             WHERE list_id = ?1 AND item_id = ?2
         ")?;
-        stmt.execute([*self.id, *item.id])?;
+        stmt.execute([*self.id, *item.get_id()?])?;
         Ok(item)
     }
 
@@ -172,7 +173,7 @@ impl Default for List {
 mod tests {
     use rstest::*;
     use rusqlite::Connection;
-    use crate::test_fixtures::{db_connection, TestFactory, test_factory};
+    use crate::test_fixtures::{db_connection, test_factory, TestFactory};
     use super::*;
 
     #[rstest]
@@ -205,16 +206,17 @@ mod tests {
     }
 
     #[rstest]
-    fn list_add_remove_items(db_connection: &Connection, mut test_factory: TestFactory) {
-        let mut list = List::create_new(db_connection, "Glorious List", "").unwrap();
-        let start_items = test_factory.create_items(5);
+    fn list_add_remove_items(db_connection: &Connection, mut test_factory: TestFactory) -> ArreResult<()> {
+        let mut list = List::create_new(db_connection, "Glorious List", "")?;
+        let start_items = test_factory.create_items(5)?;
         let first_item = start_items[0].clone();
-        test_factory.assert_items_number(5);
+        test_factory.assert_items_number(5)?;
         start_items.into_iter().for_each(|item| list.add_item(db_connection, item).unwrap());
         test_factory.assert_items_number_in_list(&list, 5);
-        list.remove_item(&db_connection, 0).unwrap();
+        list.remove_item(&db_connection, 0)?;
         test_factory.assert_items_number_in_list(&list, 4);
-        test_factory.assert_item_in_list(&first_item, &list, false);
+        test_factory.assert_item_in_list(&first_item, &list, false)?;
+        Ok(())
     }
 
     #[rstest]
@@ -227,9 +229,9 @@ mod tests {
     }
 
     #[rstest]
-    fn save(db_connection: &Connection, mut test_factory: TestFactory) {
+    fn save(db_connection: &Connection, mut test_factory: TestFactory) -> ArreResult<()> {
         let mut list = List::create_new(db_connection, "Glorious List", "").unwrap();
-        list.items = test_factory.create_items(3);
+        list.items = test_factory.create_items(3)?;
         test_factory.assert_items_number_in_list(&list, 0);
         list.save(db_connection).unwrap();
         test_factory.assert_items_number_in_list(&list, 3);
@@ -238,9 +240,10 @@ mod tests {
         // The final amount after the save should be 4
         list.items.pop();
         list.items.pop();
-        list.items.extend(test_factory.create_items(3));
+        list.items.extend(test_factory.create_items(3)?);
         list.save(db_connection).unwrap();
         test_factory.assert_items_number_in_list(&list, 4);
+        Ok(())
     }
 
 }

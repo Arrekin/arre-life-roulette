@@ -1,11 +1,12 @@
 use std::borrow::Borrow;
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection};
 use rstest::*;
 
 use crate::db_init::initialize_database;
-use crate::item::{Item, ItemId};
-use crate::item_tag::{ItemTag, ItemTagId};
+use crate::item::{Item, item_create, ItemId};
+use crate::item_tag::{ItemTagId};
 use crate::list::{List, ListId};
+use crate::errors::ArreResult;
 
 #[fixture]
 #[once]
@@ -46,27 +47,28 @@ impl TestFactory<'_> {
         }
     }
 
-    pub fn create_items(&mut self, items_nb: usize) -> Vec<Item> {
+    pub fn create_items(&mut self, items_nb: usize) -> ArreResult<Vec<Item>> {
         (0..items_nb).map(|_| {
-            let item = Item::create_new(
+            let item = item_create(
                 self.connection,
                 format!("Item #{}", self.items_count),
                 format!("Item #{} description", self.items_count),
-            ).unwrap();
-            self.created_items.push(item.id);
+            )?;
+            self.created_items.push(item.get_id()?);
             self.items_count += 1;
-            item
-        }).collect::<Vec<_>>()
+            Ok(item)
+        }).collect::<ArreResult<Vec<_>>>().into()
     }
 
     /// Assert total number of items in the DB
-    pub fn assert_items_number(&self, items_nb: usize) {
-        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM items").unwrap();
-        let items_count = stmt.query_row([], |row| row.get::<usize, usize>(0)).unwrap();
+    pub fn assert_items_number(&self, items_nb: usize) -> ArreResult<()> {
+        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM items")?;
+        let items_count = stmt.query_row([], |row| row.get::<usize, usize>(0))?;
         assert_eq!(
             items_count, items_nb,
             "Items expected number is not equal to number of items in DB. Expected: {}, Actual: {}", items_nb, items_count
         );
+        Ok(())
     }
     /// Assert total number of items in the list
     pub fn assert_items_number_in_list(&self, list: impl Borrow<List>, items_nb: usize) {
@@ -78,18 +80,20 @@ impl TestFactory<'_> {
         )
     }
     /// Assert whether item should or not exist in the DB
-    pub fn assert_item_exist(&self, item: impl Borrow<Item>, should_exists: bool) {
+    pub fn assert_item_exist(&self, item: impl Borrow<Item>, should_exists: bool) -> ArreResult<()> {
         let expected = if should_exists { 1 } else { 0 };
-        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM items WHERE item_id = ?1").unwrap();
-        let item_count = stmt.query_row([item.borrow().id], |row| row.get::<usize, usize>(0)).unwrap();
+        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM items WHERE item_id = ?1")?;
+        let item_count = stmt.query_row([item.borrow().get_id()?], |row| row.get::<usize, usize>(0))?;
         assert_eq!(item_count, expected, "Item existence incorrect, Expected: {}, Actual: {}", expected, item_count);
+        Ok(())
     }
     /// Assert whether item should or not be in a list
-    pub fn assert_item_in_list(&self, item: impl Borrow<Item>, list: impl Borrow<List>, should_exists: bool) {
+    pub fn assert_item_in_list(&self, item: impl Borrow<Item>, list: impl Borrow<List>, should_exists: bool) -> ArreResult<()> {
         let expected = if should_exists { 1 } else { 0 };
-        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM item_list_map WHERE item_id = ?1 AND list_id = ?2").unwrap();
-        let item_count = stmt.query_row([*item.borrow().id, *list.borrow().id], |row| row.get::<usize, usize>(0)).unwrap();
+        let mut stmt = self.connection.prepare("SELECT COUNT(*) FROM item_list_map WHERE item_id = ?1 AND list_id = ?2")?;
+        let item_count = stmt.query_row([*item.borrow().get_id()?, *list.borrow().id], |row| row.get::<usize, usize>(0))?;
         assert_eq!(item_count, expected, "Item existence in list incorrect, Expected: {}, Actual: {}", expected, item_count);
+        Ok(())
     }
 
 }

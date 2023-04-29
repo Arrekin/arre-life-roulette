@@ -59,8 +59,6 @@ impl ControlVirtual for LogsView {
     }
     fn ready(&mut self) {
         self.logs_vboxcontainer = self.base.try_get_node_as("ScrollContainer/VBoxContainer");
-        let mut logger = get_singleton::<Logger>("Logger");
-        logger.bind_mut().error(ArreError::InstantiateFailed("LogsView".into(), "LogsView::ready".into()));
     }
 
     fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {
