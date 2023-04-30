@@ -6,7 +6,8 @@ use crate::errors::ArreError;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
-use crate::list::List;
+use crate::item::Item;
+use crate::list::{List, list_items_get};
 
 pub enum RollState {
     AwaitingRoll,
@@ -39,6 +40,7 @@ pub struct RollView {
 
     // state
     list: List,
+    items: Vec<Item>,
     roll_state: RollState,
     work_item: usize,
 }
@@ -50,6 +52,9 @@ impl RollView {
 
     pub fn set_list(&mut self, list: List) {
         self.list = list;
+        let globals = get_singleton::<Globals>("Globals");
+        let connection = &globals.bind().connection;
+        self.items = list_items_get(connection, self.list.get_id().unwrap()).unwrap();
     }
 
     #[func]
@@ -68,7 +73,7 @@ impl RollView {
                 self.awaiting_subview.as_mut().map(|view| view.set_visible(false));
                 self.work_assigned_subview.as_mut().map(|view| view.set_visible(true));
                 self.work_finished_subview.as_mut().map(|view| view.set_visible(false));
-                let work_item = &self.list.items[self.work_item];
+                let work_item = &self.items[self.work_item];
                 self.item_name_label.as_mut().map(|label| label.set_text(work_item.name.clone().into()));
                 self.item_description_label.as_mut().map(|label| label.set_text(work_item.description.clone().into()));
             },
@@ -82,14 +87,12 @@ impl RollView {
 
     #[func]
     fn on_roll_start_button_up(&mut self) {
-        // Load the list items and randomly choose one element
-        let globals = get_singleton::<Globals>("Globals");
-        let connection = &globals.bind().connection;
-        // TODO: Instead of loading full items, load only their Ids
-        self.list.load_items(connection).unwrap_or_else(|e| log_error(e));
-
+        if self.items.len() == 0 {
+            log_error(ArreError::ListHasNoItems(self.list.name.clone()));
+            return;
+        }
         let mut rng = rand::thread_rng();
-        self.work_item = rng.gen_range(0..self.list.items.len());
+        self.work_item = rng.gen_range(0..self.items.len());
 
         self.roll_state = RollState::WorkAssigned;
         godot_print!("Selected work item: {}", self.work_item);
@@ -144,6 +147,7 @@ impl PanelVirtual for RollView {
             close_button: None,
 
             list: List::default(),
+            items: Vec::new(),
             roll_state: RollState::AwaitingRoll,
             work_item: 0,
         }

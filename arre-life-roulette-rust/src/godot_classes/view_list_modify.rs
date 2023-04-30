@@ -9,8 +9,8 @@ use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
 use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
-use crate::item::Item;
-use crate::list::List;
+use crate::item::{Item, item_get_all, items_to_ids};
+use crate::list::{List, list_create, list_items_get, list_items_get_complement, list_items_update, list_update};
 
 const UI_TEXT_CREATE: &str = "Create List";
 const UI_TEXT_MODIFY: &str = "Modify List";
@@ -45,6 +45,7 @@ pub struct ListModifyView {
 
     // state
     list: List,
+    items_in: Vec<Item>,
     items_out: Vec<Item>,
     mode: Mode,
 
@@ -82,15 +83,15 @@ impl ListModifyView {
 
         match self.mode {
             Mode::Add => {
-                let mut new_list = List::create_new(connection, new_name, new_description).unwrap();
-                new_list.items = std::mem::replace(&mut self.list.items, vec![]);
-                new_list.save(connection).unwrap();
+                let mut new_list = list_create(connection, new_name, new_description).unwrap();
+                list_items_update(connection, new_list.get_id().unwrap(), items_to_ids(&self.items_in).unwrap()).unwrap();
                 self.set_mode_edit(new_list);
             }
             Mode::Edit => {
                 self.list.name = new_name;
                 self.list.description = new_description;
-                self.list.save(connection).unwrap();
+                list_update(connection, &self.list).unwrap();
+                list_items_update(connection, self.list.get_id().unwrap(), items_to_ids(&self.items_in).unwrap()).unwrap();
             }
         }
         self.needs_full_refresh = true;
@@ -119,7 +120,7 @@ impl ListModifyView {
         // Clear old and create a button for each item
         self.items_in_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
         self.items_in_grid_elements.extend(
-            self.list.items.iter().filter_map(|item| {
+            self.items_in.iter().filter_map(|item| {
                 let instance = {
                     if let Some(instance) = self.item_selection_button.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED) {
                         instance
@@ -200,8 +201,17 @@ impl ListModifyView {
     fn refresh_items_in_out(&mut self) {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
-        self.items_out = self.list.get_items_not_on_list(connection).unwrap();
-        self.list.load_items(connection).unwrap();
+        match self.mode {
+            Mode::Add => {
+                self.items_out = item_get_all(connection).unwrap();
+                self.items_in = vec![];
+            },
+            Mode::Edit => {
+                let list_id = self.list.get_id().unwrap();
+                self.items_out = list_items_get_complement(connection, list_id).unwrap();
+                self.items_in = list_items_get(connection, list_id).unwrap();
+            }
+        }
     }
 
 }
@@ -225,6 +235,7 @@ impl PanelVirtual for ListModifyView {
             close_button: None,
 
             list: List::default(),
+            items_in: vec![],
             items_out: vec![],
             mode: Mode::Add,
 
@@ -298,12 +309,12 @@ impl OnClickBehavior for OnClickBehaviorSwitchItemsInOut {
             // // Depending whether the item is in or out, move it from one list to the other
             match self.in_or_out {
                 InOrOut::In => {
-                    parent.list.items.retain(|elem| elem != item);
+                    parent.items_in.retain(|elem| elem != item);
                     parent.items_out.push(item.clone());
                 },
                 InOrOut::Out => {
                     parent.items_out.retain(|elem| elem != item);
-                    parent.list.items.push(item.clone());
+                    parent.items_in.push(item.clone());
                 }
             }
             parent.needs_items_refresh = true;

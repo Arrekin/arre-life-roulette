@@ -3,7 +3,7 @@ use godot::prelude::*;
 use rusqlite::Connection;
 use crate::db_init::initialize_database;
 use crate::item::{item_create};
-use crate::list::List;
+use crate::list::{List, list_create};
 
 #[derive(GodotClass)]
 #[class(base=Node)]
@@ -29,9 +29,9 @@ impl NodeVirtual for Globals {
         item_create(&connection, "Demo Item 2".to_string(), "Demo Item 2 description".to_string()).unwrap();
         item_create(&connection, "Demo Item 3".to_string(), "Demo Item 3 description".to_string()).unwrap();
         // Insert some lists examples
-        List::create_new(&connection, "Demo List 1".to_string(), "Demo List 1 description".to_string()).unwrap();
-        List::create_new(&connection, "Demo List 2".to_string(), "Demo List 2 description".to_string()).unwrap();
-        List::create_new(&connection, "Demo List 3".to_string(), "Demo List 3 description".to_string()).unwrap();
+        list_create(&connection, "Demo List 1".to_string(), "Demo List 1 description".to_string()).unwrap();
+        list_create(&connection, "Demo List 2".to_string(), "Demo List 2 description".to_string()).unwrap();
+        list_create(&connection, "Demo List 3".to_string(), "Demo List 3 description".to_string()).unwrap();
 
         Self {
             base,

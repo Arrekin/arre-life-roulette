@@ -78,6 +78,10 @@ pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
     Ok(())
 }
 
+pub fn items_to_ids(items: &[Item]) -> ArreResult<Vec<ItemId>> {
+    items.iter().map(|item| item.get_id()).collect()
+}
+
 pub type ItemId = Id<Item>;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Item {
@@ -109,7 +113,7 @@ impl Item {
     }
 
     pub fn get_id(&self) -> ArreResult<ItemId> {
-        Ok(self.id.ok_or(ArreError::ItemNotPersisted())?)
+        self.id.ok_or(ArreError::ItemNotPersisted().into())
     }
 }
 
@@ -137,21 +141,20 @@ mod tests {
     use std::fmt::Debug;
     use rstest::*;
     use rusqlite::Connection;
-    use crate::test_fixtures::{db_connection, test_factory, TestFactory};
+    use crate::test_fixtures::{conn, TestFactory};
     use super::*;
 
     #[rstest]
     #[case("Glorious Item", "")]
     #[case("Glorious Item", "Glorious Item Description")]
     fn item_create_successful_then_delete(
-        db_connection: &Connection,
-        mut test_factory: TestFactory,
+        conn: Connection,
         #[case] item_name: String,
         #[case] item_description: String,
     ) -> ArreResult<()> {
-        let item = item_create(db_connection, &item_name, &item_description);
-        assert!(item.is_ok(), "Could not create item, error: {:?}", item.err().unwrap());
-        let item = item.unwrap();
+        let tf = TestFactory::new(&conn);
+        let item = item_create(&conn, &item_name, &item_description)?;
+        let item_id = item.get_id()?;
         assert_eq!(
             item.name, item_name,
             "Item name is wrong. Expected {:?}, got {:?}",
@@ -166,18 +169,18 @@ mod tests {
         assert_eq!(item.is_finished, false, "Item finished after creation");
 
         // Delete the item and check that there is no items in the table
-        item_delete(&db_connection, item.get_id()?)?;
-        test_factory.assert_item_exist(&item, false)?;
-        test_factory.assert_items_number(0)?;
+        item_delete(&conn, item_id)?;
+        tf.assert_item_exist(item_id, false)?;
+        tf.assert_items_number(0)?;
         Ok(())
     }
 
     //persist test, first create a non persisted item, check that get_id() returns error, the persist the item and check that get_id() returns id correctly now
     #[rstest]
     fn item_persist_successful(
-        db_connection: &Connection,
-        mut test_factory: TestFactory,
+        conn: Connection,
     ) -> ArreResult<()> {
+        let tf = TestFactory::new(&conn);
         let mut item = Item::default();
         match item.get_id() {
             Ok(_) => { panic!("ItemId should not be available in non persisted item")}
@@ -187,9 +190,8 @@ mod tests {
                 } else {  panic!("Unexpected error: {:?}", err) }
             }
         }
-        item_persist(&db_connection, &mut item)?;
-        test_factory.assert_item_exist(&item, true)?;
-        item.get_id()?; // Shall not fail now
+        item_persist(&conn, &mut item)?;
+        tf.assert_item_exist(item.get_id()?, true)?;
         Ok(())
     }
 
@@ -198,20 +200,20 @@ mod tests {
     #[case("Glorious Item", "", false, false)]
     #[case("Glorious Item", "Glorious Item Description", true, true)]
     fn item_update_successful(
-        db_connection: &Connection,
-        mut test_factory: TestFactory,
+        conn: Connection,
         #[case] expected_item_name: String,
         #[case] expected_item_description: String,
         #[case] expected_is_suspended: bool,
         #[case] expected_is_finished: bool,
     ) -> ArreResult<()> {
-        let mut item = test_factory.create_items(1)?.pop().unwrap();
+        let mut tf = TestFactory::new(&conn);
+        let mut item = tf.create_items(1)?.pop().unwrap();
         item.name = expected_item_name.clone();
         item.description = expected_item_description.clone();
         item.is_suspended = expected_is_suspended;
         item.is_finished = expected_is_finished;
-        item_update(&db_connection, &item)?;
-        let item = item_get(db_connection, item.get_id()?)?;
+        item_update(&conn, &item)?;
+        let item = item_get(&conn, item.get_id()?)?;
         assert_eq!(
             item.name, expected_item_name,
             "Item name is wrong. Expected {:?}, got {:?}",
@@ -231,13 +233,13 @@ mod tests {
     #[case(ItemId::new(2))]
     #[case(2i64)]
     fn item_get_successful(
-        db_connection: &Connection,
-        mut test_factory: TestFactory,
+        conn: Connection,
         #[case] item_id: impl Into<ItemId> + Debug + Clone,
     ) -> ArreResult<()>{
+        let mut tf = TestFactory::new(&conn);
         // create 3 items, get the second one by id and compare its properties
-        test_factory.create_items(3)?;
-        let item = item_get(db_connection, item_id.clone())?;
+        tf.create_items(3)?;
+        let item = item_get(&conn, item_id.clone())?;
         let expected_item_id = Some(item_id.into());
         assert_eq!(
             item.id, expected_item_id,
@@ -252,13 +254,13 @@ mod tests {
     #[case(1)]
     #[case(5)]
     fn item_get_all_successful(
-        db_connection: &Connection,
-        mut test_factory: TestFactory,
+        conn: Connection,
         #[case] expected_number_of_items: usize,
     ) -> ArreResult<()> {
+        let mut tf = TestFactory::new(&conn);
         // Create 5 items and check that get_all() returns all items
-        test_factory.create_items(expected_number_of_items)?;
-        let items = item_get_all(db_connection)?;
+        tf.create_items(expected_number_of_items)?;
+        let items = item_get_all(&conn)?;
         assert_eq!(items.len(), expected_number_of_items);
         Ok(())
     }

@@ -12,6 +12,10 @@ pub enum ArreError {
     InstantiateFailed(String, String),
     #[error("[color=red][b]`try_cast()`[/b] failed for [b]`{0}`[/b] at [b]`{1}`[/b][/color]")]
     CastFailed(String, String),
+    // Logic errors
+    // List has no items error
+    #[error("[color=red]List [b]`{0}`[/b] has no items[/color]")]
+    ListHasNoItems(String),
     // Core errors
     #[error("[color=red] Attempt to operate on non persisted item [/color]")]
     ItemNotPersisted(),
