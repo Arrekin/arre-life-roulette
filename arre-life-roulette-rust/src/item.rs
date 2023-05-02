@@ -61,7 +61,9 @@ pub fn item_get(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<Item> {
     })?)
 }
 
-pub fn item_get_all(conn: &Connection) -> ArreResult<Vec<Item>> {
+pub fn item_get_all<C>(conn: &Connection) -> ArreResult<C>
+where C: FromIterator<Item>
+{
     let mut stmt = conn.prepare("
         SELECT
          item_id, name, description, is_suspended, is_finished
@@ -69,7 +71,7 @@ pub fn item_get_all(conn: &Connection) -> ArreResult<Vec<Item>> {
     ")?;
     let result = stmt.query_map([], |row| {
         Item::from_row(row)
-    })?.collect::<Result<Vec<_>>>()?;
+    })?.collect::<Result<C>>()?;
     Ok(result)
 }
 
@@ -78,8 +80,10 @@ pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
     Ok(())
 }
 
-pub fn items_to_ids(items: &[Item]) -> ArreResult<Vec<ItemId>> {
-    items.iter().map(|item| item.get_id()).collect()
+pub fn items_to_ids<C>(items: &[Item]) -> ArreResult<C>
+where C: FromIterator<ItemId>
+{
+    items.iter().map(|item| item.get_id()).collect::<ArreResult<C>>()
 }
 
 pub type ItemId = Id<Item>;
@@ -260,7 +264,7 @@ mod tests {
         let mut tf = TestFactory::new(&conn);
         // Create 5 items and check that get_all() returns all items
         tf.create_items(expected_number_of_items)?;
-        let items = item_get_all(&conn)?;
+        let items = item_get_all::<Vec<_>>(&conn)?;
         assert_eq!(items.len(), expected_number_of_items);
         Ok(())
     }

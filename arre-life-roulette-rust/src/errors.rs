@@ -1,7 +1,8 @@
 use thiserror::Error;
 use std::error::Error;
 
-pub type ArreResult<T> = Result<T, Box<dyn Error>>;
+pub type BoxedError = Box<dyn Error>;
+pub type ArreResult<T> = Result<T, BoxedError>;
 
 #[derive(Error, Debug)]
 pub enum ArreError {

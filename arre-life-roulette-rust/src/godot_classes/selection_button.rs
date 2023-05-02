@@ -62,16 +62,8 @@ impl SelectionButton {
         if let Some(event) = event.try_cast::<InputEventMouseButton>() {
             if event.is_pressed() {
                 match event.get_button_index() {
-                    MouseButton::MOUSE_BUTTON_LEFT => {
-                        self.on_left_click_behavior.as_mut().map(|behavior| {
-                            behavior.on_click(&self.content);
-                        });
-                    },
-                    MouseButton::MOUSE_BUTTON_RIGHT => {
-                        self.on_right_click_behavior.as_mut().map(|behavior| {
-                            behavior.on_click(&self.content);
-                        });
-                    },
+                    MouseButton::MOUSE_BUTTON_LEFT => self.on_left_button_up(),
+                    MouseButton::MOUSE_BUTTON_RIGHT => self.on_right_button_up(),
                     _ => {}
                 }
             }

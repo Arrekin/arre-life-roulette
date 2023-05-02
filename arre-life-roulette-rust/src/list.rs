@@ -1,8 +1,7 @@
-use std::borrow::Borrow;
 use std::collections::HashSet;
 use rusqlite::{Connection, Result, Row};
 use crate::errors::{ArreError, ArreResult};
-use crate::item::{Item, item_get_all, ItemId};
+use crate::item::{Item, ItemId};
 use crate::utils::Id;
 
 pub type ListId = Id<List>;
@@ -73,7 +72,9 @@ pub fn list_get(conn: &Connection, id: ListId) -> ArreResult<List> {
     })?)
 }
 
-pub fn list_get_all(conn: &Connection) -> Result<Vec<List>> {
+pub fn list_get_all<C>(conn: &Connection) -> Result<C>
+where C: FromIterator<List>
+{
     let mut stmt = conn.prepare("
         SELECT
          list_id, name, description
@@ -82,7 +83,7 @@ pub fn list_get_all(conn: &Connection) -> Result<Vec<List>> {
     let results = stmt.query_map([], |row| {
         List::from_row(row)
     })?;
-    results.collect::<Result<Vec<_>>>()
+    results.collect::<Result<C>>()
 }
 
 pub fn list_delete(conn: &Connection, id: ListId) -> ArreResult<()> {
@@ -94,7 +95,7 @@ pub fn list_delete(conn: &Connection, id: ListId) -> ArreResult<()> {
 pub fn list_items_add(
     conn: &Connection,
     list_id: ListId,
-    mut items: impl IntoIterator<Item=ItemId>
+    items: impl IntoIterator<Item=ItemId>
 ) -> ArreResult<()> {
     let mut stmt = conn.prepare("INSERT INTO item_list_map (list_id, item_id) VALUES (?1, ?2)")?;
     for item_id in items {
@@ -248,14 +249,14 @@ mod tests {
     #[rstest]
     fn list_add_remove_items(conn: Connection) -> ArreResult<()> {
         let mut tf = TestFactory::new(&conn);
-        let mut list = list_create(&conn, "Glorious List", "")?;
-        let mut list_id = list.get_id()?;
+        let list = list_create(&conn, "Glorious List", "")?;
+        let list_id = list.get_id()?;
         let start_items = tf.create_items(5)?;
         let first_item_id = start_items[0].get_id()?;
         tf.assert_items_number(5)?;
         list_items_add(
             &conn, list_id,
-            items_to_ids(&start_items)?,
+            items_to_ids::<Vec<_>>(&start_items)?,
         )?;
         tf.assert_items_number_in_list(list_id, 5);
         list_items_delete(&conn, list_id, std::iter::once(first_item_id))?;
@@ -285,7 +286,7 @@ mod tests {
         tf.assert_items_number_in_list(list_id, 0);
         list_items_update(
             &conn, list_id,
-            items_to_ids(&list_items)?
+            items_to_ids::<Vec<_>>(&list_items)?
         )?;
         tf.assert_items_number_in_list(list_id, 3);
 
@@ -294,7 +295,7 @@ mod tests {
         list_items.pop();
         list_items.pop();
         list_items.extend(tf.create_items(3)?);
-        list_items_update(&conn, list_id, items_to_ids(&list_items)?)?;
+        list_items_update(&conn, list_id, items_to_ids::<Vec<_>>(&list_items)?)?;
         tf.assert_items_number_in_list(list_id, 4);
         Ok(())
     }

@@ -3,7 +3,7 @@ use godot::prelude::*;
 use rusqlite::Connection;
 use crate::db_init::initialize_database;
 use crate::item::{item_create};
-use crate::list::{List, list_create};
+use crate::list::{list_create};
 
 #[derive(GodotClass)]
 #[class(base=Node)]

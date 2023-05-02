@@ -2,10 +2,10 @@ use godot::engine::{Control, ControlVirtual, VBoxContainer, RichTextLabel, Input
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
-use crate::errors::ArreError;
+use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::resources::{LOG_ENTRY_PREFAB, LOGS_VIEW_TOGGLE, SELECTION_BUTTON_PREFAB};
-use crate::godot_classes::singletons::logger::Logger;
-use crate::godot_classes::utils::get_singleton;
+use crate::godot_classes::singletons::logger::{log_error, Logger};
+use crate::godot_classes::utils::{GdHolder, get_singleton};
 
 #[derive(GodotClass)]
 #[class(base=Control)]
@@ -17,7 +17,7 @@ pub struct LogsView {
     log_entry_prefab: Gd<PackedScene>,
 
     // cached UI elements
-    pub logs_vboxcontainer: Option<Gd<VBoxContainer>>
+    pub logs_vboxcontainer: GdHolder<VBoxContainer>,
 }
 
 #[godot_api]
@@ -25,25 +25,31 @@ impl LogsView {
 
     #[func]
     fn refresh_display(&mut self) {
-        let mut logger = get_singleton::<Logger>("Logger");
-        let mut logger = logger.bind_mut();
-        self.logs_vboxcontainer.as_mut().map(|vbox| {
+        match try {
+            let logger = get_singleton::<Logger>("Logger");
+            let logger = logger.bind();
+            let vbox = self.logs_vboxcontainer.ok_mut()?;
+
             // First delete all existing UI log entries
             for mut child in vbox.get_children(false).iter_shared() {
                 child.queue_free();
             }
             // Then add new ones
             for log in logger.logs.clone() {
-                let log_entry = self.log_entry_prefab.instantiate(GenEditState::GEN_EDIT_STATE_DISABLED);
-                if let Some(log_node) = log_entry {
+                let log_node = self.log_entry_prefab
+                    .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
+                    .ok_or(ArreError::InstantiateFailed(SELECTION_BUTTON_PREFAB.into(), "LogsView::refresh_display".into()))?;
+
                     let rich_text_label = log_node.try_get_node_as::<RichTextLabel>("PanelContainer/MarginContainer/RichTextLabel");
-                    if let Some(mut log_label) = rich_text_label {
+                    rich_text_label.map(|mut log_label| {
                         log_label.set_text(log.clone());
                         vbox.add_child(log_node, false, InternalMode::INTERNAL_MODE_DISABLED);
-                    } else { logger.error(ArreError::NullGd("LogsView::refresh_display::<RichTextLabel>".into())); continue; }
-                } else { logger.error(ArreError::InstantiateFailed(SELECTION_BUTTON_PREFAB.into(), "LogsView::refresh_display".into())); continue; }
+                    }).ok_or(ArreError::NullGd("LogsView::refresh_display::<RichTextLabel>".into()))?;
             }
-        });
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
+        }
     }
 }
 
@@ -54,11 +60,17 @@ impl ControlVirtual for LogsView {
             base,
             log_entry_prefab: load(LOG_ENTRY_PREFAB),
 
-            logs_vboxcontainer: None
+            logs_vboxcontainer: GdHolder::default(),
         }
     }
     fn ready(&mut self) {
-        self.logs_vboxcontainer = self.base.try_get_node_as("ScrollContainer/VBoxContainer");
+        match try {
+            let base = &self.base;
+            self.logs_vboxcontainer = GdHolder::from_path(base, "ScrollContainer/VBoxContainer");
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
+        }
     }
 
     fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {

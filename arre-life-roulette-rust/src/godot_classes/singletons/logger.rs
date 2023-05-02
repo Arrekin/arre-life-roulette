@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
-use std::error::Error;
 use godot::engine::{Node, NodeVirtual};
 use godot::prelude::*;
+use crate::errors::BoxedError;
 use crate::godot_classes::utils::get_singleton;
 
 #[derive(GodotClass)]
@@ -17,7 +17,8 @@ pub struct Logger {
 
 #[godot_api]
 impl Logger {
-    pub fn error(&mut self, error: impl Error) {
+    pub fn error(&mut self, error: impl Into<BoxedError>) {
+        let error = error.into();
         self.push_log(error.to_string().into())
     }
 
@@ -41,7 +42,8 @@ impl NodeVirtual for Logger {
     }
 }
 
-pub fn log_error(error: impl Error) {
+pub fn log_error(error: impl Into<BoxedError>) {
+    let error = error.into();
     let mut logger = get_singleton::<Logger>("Logger");
     logger.bind_mut().error(error);
 }
