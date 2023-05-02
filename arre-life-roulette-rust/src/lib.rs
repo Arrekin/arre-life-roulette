@@ -1,3 +1,7 @@
+#![feature(log_syntax)]
+#[macro_use]
+extern crate arre_life_roulette_rust_logger_macro;
+
 mod item;
 mod item_tag;
 mod db_init;

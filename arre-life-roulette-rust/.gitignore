@@ -1,3 +1,5 @@
 /target
 /Cargo.lock
 /.idea
+logger_macro/target
+logger_macro/Cargo.lock

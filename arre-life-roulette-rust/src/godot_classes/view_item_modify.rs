@@ -1,7 +1,8 @@
 use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, NodeExt, Label};
 use godot::prelude::*;
-use crate::errors::ArreError;
+use arre_life_roulette_rust_logger_macro::duplicate_method;
+use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::get_singleton;
@@ -38,22 +39,21 @@ impl ItemModifyView {
     #[signal]
     fn dialog_closed();
 
+    #[duplicate_method]
     #[func]
-    fn on_apply_item_button_up(&mut self) {
+    fn on_apply_item_button_up(&mut self) -> (){
         let new_name = {
             if let Some(line_edit) = self.name_line_edit.as_ref() {
                 line_edit.get_text().to_string()
             } else {
-                log_error(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::name_line_edit".into()));
-                return;
+                return ArreResult::Err(Box::new(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::name_line_edit".into())));
             }
         };
         let new_description = {
             if let Some(text_edit) =  self.description_text_edit.as_ref() {
                 text_edit.get_text().to_string()
             } else {
-                log_error(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::description_text_edit".into()));
-                return;
+                return ArreResult::Err(Box::new(ArreError::NullGd("ItemModifyView::on_apply_item_button_up::description_text_edit".into())));
             }
         };
 
@@ -74,10 +74,12 @@ impl ItemModifyView {
         }.unwrap_or_else(|e| log_error(e.as_ref()));
 
         self.refresh_display();
+        Ok(())
     }
 
     #[func]
     fn refresh_display(&mut self) {
+        self._on_apply_item_button_up();
         self.name_line_edit.as_mut().map(|line_edit|
             line_edit.set_text(self.item.name.clone().into())
         );
