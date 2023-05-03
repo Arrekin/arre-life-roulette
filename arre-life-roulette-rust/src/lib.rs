@@ -9,6 +9,7 @@ mod list;
 mod utils;
 mod godot_classes;
 mod errors;
+mod item_stats;
 
 use godot::engine::class_macros::auto_register_classes;
 use godot::engine::Engine;

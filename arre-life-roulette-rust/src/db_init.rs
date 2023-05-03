@@ -12,6 +12,14 @@ pub fn initialize_database(conn: &Connection) -> Result<()> {
         (),
     )?;
     conn.execute(
+        "CREATE TABLE item_stats (
+            item_id INTEGER PRIMARY KEY,
+            times_worked INTEGER NOT NULL DEFAULT 0,
+            time_spent INTEGER NOT NULL DEFAULT 0
+        )",
+        (),
+    )?;
+    conn.execute(
         "CREATE TABLE lists (
             list_id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,

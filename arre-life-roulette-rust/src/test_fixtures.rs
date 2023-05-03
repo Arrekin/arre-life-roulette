@@ -14,7 +14,6 @@ pub fn conn() -> Connection {
     let connection = connection.unwrap();
     let init_result = initialize_database(&connection);
     assert!(init_result.is_ok(), "Could not initialize database, error: {}", init_result.err().unwrap());
-    println!("Called connection!");
     connection
 }
 

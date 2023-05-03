@@ -33,9 +33,9 @@ pub fn list_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn list_persist(conn: &Connection, list: &mut List) -> ArreResult<()> {
-    conn.execute(
-        "INSERT INTO lists (name, description) VALUES (?1, ?2)",
-        (&list.name, &list.description),
+    conn.execute("
+        INSERT INTO lists (name, description) VALUES (?1, ?2)
+        ", (&list.name, &list.description),
     )?;
     let mut stmt = conn.prepare("
         SELECT
@@ -52,10 +52,10 @@ pub fn list_update(conn: &Connection, list: &List) -> ArreResult<()> {
     conn.execute(
         "
         UPDATE lists
-        SET name = ?1, description = ?2
+        SET
+         name = ?1, description = ?2
         WHERE list_id = ?3
-        ",
-        (&list.name, &list.description, list.get_id()?),
+        ", (&list.name, &list.description, list.get_id()?),
     )?;
     Ok(())
 }

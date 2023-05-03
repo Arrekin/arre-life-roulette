@@ -6,9 +6,13 @@ use crate::utils::Id;
 pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> ArreResult<Item> {
     let name = name.as_ref();
     let description = description.as_ref();
-    conn.execute(
-    "INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, false, false)",
-    (name, description),
+    conn.execute("
+        INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, false, false);
+        ", (name, description),
+    )?;
+    conn.execute("
+        INSERT INTO item_stats (item_id) VALUES (last_insert_rowid());
+        ", (),
     )?;
     let mut stmt = conn.prepare("
         SELECT
@@ -22,9 +26,12 @@ pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn item_persist(conn: &Connection, item: &mut Item) -> ArreResult<()> {
-    conn.execute(
-    "INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4)",
-    (&item.name, &item.description, item.is_suspended, item.is_finished),
+    conn.execute("
+        INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4);
+        ", (&item.name, &item.description, item.is_suspended, item.is_finished),
+    )?;
+    conn.execute("
+        INSERT INTO item_stats (item_id) VALUES (last_insert_rowid());", (),
     )?;
     let mut stmt = conn.prepare("
         SELECT
@@ -38,13 +45,12 @@ pub fn item_persist(conn: &Connection, item: &mut Item) -> ArreResult<()> {
 }
 
 pub fn item_update(conn: &Connection, item: &Item) -> ArreResult<()> {
-    conn.execute(
-    "
-    UPDATE items
-    SET name = ?1, description = ?2, is_suspended = ?3, is_finished = ?4
-    WHERE item_id = ?5
-    ",
-    (&item.name, &item.description, &item.is_suspended, &item.is_finished, item.get_id()?),
+    conn.execute("
+        UPDATE items
+        SET
+         name = ?1, description = ?2, is_suspended = ?3, is_finished = ?4
+        WHERE item_id = ?5
+    ", (&item.name, &item.description, &item.is_suspended, &item.is_finished, item.get_id()?),
     )?;
     Ok(())
 }
@@ -76,7 +82,9 @@ where C: FromIterator<Item>
 }
 
 pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
-    conn.execute("DELETE FROM items WHERE item_id = ?1", (id.into(),))?;
+    let id = id.into();
+    conn.execute("DELETE FROM items WHERE item_id = ?1;", (id,))?;
+    conn.execute("DELETE FROM item_stats WHERE item_id = ?1;", (id,))?;
     Ok(())
 }
 
@@ -179,7 +187,6 @@ mod tests {
         Ok(())
     }
 
-    //persist test, first create a non persisted item, check that get_id() returns error, the persist the item and check that get_id() returns id correctly now
     #[rstest]
     fn item_persist_successful(
         conn: Connection,
