@@ -1,8 +1,6 @@
-use std::hash::{Hash, Hasher};
 use rusqlite::{Connection, Result, Row};
-use crate::errors::{ArreError, ArreResult};
+use crate::errors::{ArreResult};
 use crate::item::ItemId;
-use crate::utils::Id;
 
 pub fn item_stats_update(conn: &Connection, stats: &ItemStats) -> ArreResult<()> {
     conn.execute("
@@ -44,9 +42,19 @@ impl ItemStats {
     }
 }
 
+// TODO: I don't like having default for ItemStats, think of other way
+impl Default for ItemStats {
+    fn default() -> Self {
+        ItemStats {
+            id: 0.into(),
+            times_worked: 0,
+            time_spent: 0,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
     use rstest::*;
     use rusqlite::Connection;
     use crate::item::{Item, item_create, item_delete, item_persist};
@@ -86,7 +94,6 @@ mod tests {
     fn update_item_stats(
         conn: Connection,
     ) -> ArreResult<()> {
-        let tf = TestFactory::new(&conn);
         let item = item_create(&conn, "Name", "Description")?;
         let mut stats = item_stats_get(&conn, item.get_id()?)?;
         stats.times_worked = 5;

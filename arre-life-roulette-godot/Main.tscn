@@ -296,10 +296,11 @@ text = "Cancel"
 
 [node name="ItemModifyView" type="ItemModifyView" parent="UI"]
 visible = false
-anchors_preset = -1
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.997
-offset_bottom = -0.0560303
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme = ExtResource("1_666we")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/ItemModifyView"]
@@ -464,6 +465,63 @@ size_flags_horizontal = 4
 text = "Add List"
 
 [node name="DialogCloseButton" type="Button" parent="UI/ListModifyView"]
+self_modulate = Color(1, 0, 0.0588235, 1)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -158.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 43.0
+grow_horizontal = 0
+text = "Close"
+
+[node name="ItemStatsView" type="ItemStatsView" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_666we")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ItemStatsView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/ItemStatsView/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 20
+
+[node name="Label" type="Label" parent="UI/ItemStatsView/VBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 50
+text = "Item Statistics"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ItemStatsView/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+alignment = 1
+
+[node name="TimesWorkedLabel" type="Label" parent="UI/ItemStatsView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Times worked: ###"
+
+[node name="TimeSpentLabel" type="Label" parent="UI/ItemStatsView/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Time spent: ###"
+
+[node name="DialogCloseButton" type="Button" parent="UI/ItemStatsView"]
 self_modulate = Color(1, 0, 0.0588235, 1)
 layout_mode = 1
 anchors_preset = 1
