@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
@@ -32,8 +33,9 @@ impl ItemStatsView {
     #[func]
     pub fn refresh_display(&mut self) {
         match try {
+            let time_spent = self.get_time_spent_string();
             self.times_worked_label.ok_mut()?.set_text(format!("{}{}", UI_TEXT_TIMES_WORKED, self.item_stats.times_worked).into());
-            self.time_spent_label.ok_mut()?.set_text(format!("{}{}", UI_TEXT_TIME_SPENT, self.item_stats.time_spent).into());
+            self.time_spent_label.ok_mut()?.set_text(format!("{}{}", UI_TEXT_TIME_SPENT, time_spent).into());
         }: ArreResult<()> {
             Ok(_) => {}
             Err(err) => { log_error(err);}
@@ -44,6 +46,13 @@ impl ItemStatsView {
     fn on_dialog_close_button_up(&mut self) {
         self.hide();
         self.emit_signal("dialog_closed".into(), &[]);
+    }
+
+    fn get_time_spent_string(&self) -> String {
+        let seconds = self.item_stats.time_spent.num_seconds() % 60;
+        let minutes = (self.item_stats.time_spent.num_seconds() / 60) % 60;
+        let hours = (self.item_stats.time_spent.num_seconds() / 60) / 60;
+        format!("{:0>2}h {:0>2}m {:0>2}s", hours, minutes, seconds)
     }
 }
 

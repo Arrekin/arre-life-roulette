@@ -1,3 +1,4 @@
+use chrono::{DateTime, Duration, Utc};
 use godot::builtin::{Callable};
 use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
@@ -44,8 +45,8 @@ pub struct RollView {
     items: Vec<Item>,
     roll_state: RollState,
     work_item: usize,
-    work_start_timestamp: std::time::Instant,
-    time_worked: std::time::Duration, // To display after work is done
+    work_start_timestamp: DateTime<Utc>,
+    time_worked: Duration, // To display after work is done
 }
 
 #[godot_api]
@@ -102,7 +103,7 @@ impl RollView {
         }
         let mut rng = rand::thread_rng();
         self.work_item = rng.gen_range(0..self.items.len());
-        self.work_start_timestamp = std::time::Instant::now();
+        self.work_start_timestamp = Utc::now();
 
         self.roll_state = RollState::WorkAssigned;
         godot_print!("Selected work item: {}", self.work_item);
@@ -113,14 +114,14 @@ impl RollView {
     fn on_work_finish_button_up(&mut self) {
         match try {
             self.roll_state = RollState::WorkFinished;
-            self.time_worked = std::time::Instant::now() - self.work_start_timestamp;
+            self.time_worked = Utc::now() - self.work_start_timestamp;
 
             // Update stats in db
             let globals = get_singleton::<Globals>("Globals");
             let connection = &globals.bind().connection;
             let mut item_stats = item_stats_get(connection, self.items[self.work_item].get_id()?)?;
             item_stats.times_worked += 1;
-            item_stats.time_spent += self.time_worked.as_secs() as usize;
+            item_stats.time_spent = item_stats.time_spent + self.time_worked;
             item_stats_update(connection, &item_stats)?;
 
             self.refresh_view();
@@ -175,8 +176,8 @@ impl PanelVirtual for RollView {
             items: Vec::new(),
             roll_state: RollState::AwaitingRoll,
             work_item: 0,
-            work_start_timestamp: std::time::Instant::now(),
-            time_worked: std::time::Duration::new(0, 0),
+            work_start_timestamp: Utc::now(),
+            time_worked: Duration::zero(),
         }
     }
     fn ready(&mut self) {

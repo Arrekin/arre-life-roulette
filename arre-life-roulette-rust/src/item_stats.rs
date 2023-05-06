@@ -1,3 +1,4 @@
+use chrono::Duration;
 use rusqlite::{Connection, Result, Row};
 use crate::errors::{ArreResult};
 use crate::item::ItemId;
@@ -7,7 +8,7 @@ pub fn item_stats_update(conn: &Connection, stats: &ItemStats) -> ArreResult<()>
         UPDATE item_stats
         SET times_worked = ?1, time_spent = ?2
         WHERE item_id = ?3
-    ", (stats.times_worked, stats.time_spent, stats.id),
+    ", (stats.times_worked, stats.time_spent.num_seconds(), stats.id),
     )?;
     Ok(())
 }
@@ -29,7 +30,7 @@ pub fn item_stats_get(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<It
 pub struct ItemStats {
     pub id: ItemId,
     pub times_worked: usize,
-    pub time_spent: usize,
+    pub time_spent: Duration,
 }
 
 impl ItemStats {
@@ -37,7 +38,7 @@ impl ItemStats {
         Ok(ItemStats {
             id: row.get(0)?,
             times_worked: row.get(1)?,
-            time_spent: row.get(2)?,
+            time_spent: Duration::seconds(row.get(2)?),
         })
     }
 }
@@ -48,7 +49,7 @@ impl Default for ItemStats {
         ItemStats {
             id: 0.into(),
             times_worked: 0,
-            time_spent: 0,
+            time_spent: Duration::zero(),
         }
     }
 }
@@ -68,7 +69,7 @@ mod tests {
         let item_id = item.get_id()?;
         let stats = item_stats_get(&conn, item_id)?;
         assert_eq!( stats.times_worked, 0, "times_worked of fresh Item should be 0");
-        assert_eq!( stats.time_spent, 0, "time_spent of fresh Item should be 0");
+        assert_eq!( stats.time_spent.num_seconds(), 0, "time_spent of fresh Item should be 0");
 
         // Delete the item and check that stats were deleted as well
         item_delete(&conn, item_id)?;
@@ -86,7 +87,7 @@ mod tests {
 
         let stats = item_stats_get(&conn, item.get_id()?)?;
         assert_eq!(stats.times_worked, 0, "times_worked of persisted Item should be 0");
-        assert_eq!(stats.time_spent, 0, "time_spent of persisted Item should be 0");
+        assert_eq!(stats.time_spent.num_seconds(), 0, "time_spent of persisted Item should be 0");
         Ok(())
     }
 
@@ -97,11 +98,11 @@ mod tests {
         let item = item_create(&conn, "Name", "Description")?;
         let mut stats = item_stats_get(&conn, item.get_id()?)?;
         stats.times_worked = 5;
-        stats.time_spent = 10;
+        stats.time_spent = Duration::seconds(10);
         item_stats_update(&conn, &stats)?;
         let stats = item_stats_get(&conn, item.get_id()?)?;
         assert_eq!(stats.times_worked, 5);
-        assert_eq!(stats.time_spent, 10);
+        assert_eq!(stats.time_spent.num_seconds(), 10);
         Ok(())
     }
 }
