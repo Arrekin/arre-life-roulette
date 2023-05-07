@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;

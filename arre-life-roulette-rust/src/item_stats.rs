@@ -1,4 +1,4 @@
-use chrono::Duration;
+use chrono::{Duration, Utc};
 use rusqlite::{Connection, Result, Row};
 use crate::errors::{ArreResult};
 use crate::item::ItemId;
@@ -6,9 +6,9 @@ use crate::item::ItemId;
 pub fn item_stats_update(conn: &Connection, stats: &ItemStats) -> ArreResult<()> {
     conn.execute("
         UPDATE item_stats
-        SET times_worked = ?1, time_spent = ?2
-        WHERE item_id = ?3
-    ", (stats.times_worked, stats.time_spent.num_seconds(), stats.id),
+        SET updated_date = ?1, times_worked = ?2, time_spent = ?3
+        WHERE item_id = ?4
+    ", (Utc::now().to_string(), stats.times_worked, stats.time_spent.num_seconds(), stats.id),
     )?;
     Ok(())
 }

@@ -1,29 +1,21 @@
 use std::collections::HashSet;
+use chrono::Utc;
 use rusqlite::{Connection, Result, Row};
 use crate::errors::{ArreError, ArreResult};
 use crate::item::{Item, ItemId};
-use crate::utils::Id;
-
-pub type ListId = Id<List>;
-
-/// A list is a collection of items.
-#[derive(Debug, Clone)]
-pub struct List {
-    pub id: Option<ListId>, // None indicates it's not persisted
-    pub name: String,
-    pub description: String,
-}
+use crate::utils::{ArreDateTime, Id};
 
 pub fn list_create(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> ArreResult<List> {
     let name = name.as_ref();
     let description = description.as_ref();
-    conn.execute(
-        "INSERT INTO lists (name, description) VALUES (?1, ?2)",
-        (name, description),
+    let dt = Utc::now().to_string();
+    conn.execute("
+        INSERT INTO lists (created_date, updated_date, name, description) VALUES (?1, ?2, ?3, ?4)
+        ", (dt.clone(), dt.clone(), name, description),
     )?;
     let mut stmt = conn.prepare("
         SELECT
-         list_id, name, description
+         list_id, created_date, updated_date, name, description
         FROM lists
         WHERE list_id = last_insert_rowid()
     ")?;
@@ -33,13 +25,14 @@ pub fn list_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn list_persist(conn: &Connection, list: &mut List) -> ArreResult<()> {
+    let dt = Utc::now().to_string();
     conn.execute("
-        INSERT INTO lists (name, description) VALUES (?1, ?2)
-        ", (&list.name, &list.description),
+        INSERT INTO lists (created_date, updated_date, name, description) VALUES (?1, ?2, ?3, ?4)
+        ", (dt.clone(), dt.clone(), &list.name, &list.description),
     )?;
     let mut stmt = conn.prepare("
         SELECT
-         list_id, name, description
+         list_id, created_date, updated_date, name, description
         FROM lists
         WHERE list_id = last_insert_rowid()
     ")?;
@@ -53,9 +46,9 @@ pub fn list_update(conn: &Connection, list: &List) -> ArreResult<()> {
         "
         UPDATE lists
         SET
-         name = ?1, description = ?2
-        WHERE list_id = ?3
-        ", (&list.name, &list.description, list.get_id()?),
+         updated_date = ?1, name = ?2, description = ?3
+        WHERE list_id = ?4
+        ", (Utc::now().to_string(), &list.name, &list.description, list.get_id()?),
     )?;
     Ok(())
 }
@@ -63,7 +56,7 @@ pub fn list_update(conn: &Connection, list: &List) -> ArreResult<()> {
 pub fn list_get(conn: &Connection, id: ListId) -> ArreResult<List> {
     let mut stmt = conn.prepare("
         SELECT
-         list_id, name, description
+         list_id, created_date, updated_date, name, description
         FROM lists
         WHERE list_id = ?1
     ")?;
@@ -77,7 +70,7 @@ where C: FromIterator<List>
 {
     let mut stmt = conn.prepare("
         SELECT
-         list_id, name, description
+         list_id, created_date, updated_date, name, description
         FROM lists
     ")?;
     let results = stmt.query_map([], |row| {
@@ -180,18 +173,33 @@ pub fn list_items_delete(conn: &Connection, list_id: ListId, items: impl Iterato
     Ok(())
 }
 
+pub type ListId = Id<List>;
+/// A list is a collection of items.
+#[derive(Debug, Clone)]
+pub struct List {
+    pub id: Option<ListId>, // None indicates it's not persisted
+    pub created_date: ArreDateTime<Utc>,
+    pub modified_date: ArreDateTime<Utc>,
+    pub name: String,
+    pub description: String,
+}
+
 impl List {
     pub fn from_row(row: &Row) -> Result<List> {
         Ok(List {
             id: Some(row.get(0)?),
-            name: row.get(1)?,
-            description: row.get(2)?,
+            created_date: row.get(1)?,
+            modified_date: row.get(2)?,
+            name: row.get(3)?,
+            description: row.get(4)?,
         })
     }
     pub fn update_from_row(&mut self, row: &Row) -> Result<()> {
         self.id = Some(row.get(0)?);
-        self.name = row.get(1)?;
-        self.description = row.get(2)?;
+        self.created_date = row.get(1)?;
+        self.modified_date = row.get(2)?;
+        self.name = row.get(3)?;
+        self.description = row.get(4)?;
         Ok(())
     }
 
@@ -204,6 +212,8 @@ impl Default for List {
     fn default() -> Self {
         Self {
             id: None,
+            created_date: Utc::now().into(),
+            modified_date: Utc::now().into(),
             name: String::new(),
             description: String::new(),
         }

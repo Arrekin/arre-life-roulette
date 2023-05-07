@@ -1,22 +1,24 @@
 use std::hash::{Hash, Hasher};
+use chrono::{Utc};
 use rusqlite::{Connection, Result, Row};
 use crate::errors::{ArreError, ArreResult};
-use crate::utils::Id;
+use crate::utils::{ArreDateTime, Id};
 
 pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> ArreResult<Item> {
     let name = name.as_ref();
     let description = description.as_ref();
+    let dt = Utc::now().to_string();
     conn.execute("
-        INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, false, false);
-        ", (name, description),
+        INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, false, false);
+        ", (dt.clone(), dt.clone(), name, description),
     )?;
     conn.execute("
-        INSERT INTO item_stats (item_id) VALUES (last_insert_rowid());
-        ", (),
+        INSERT INTO item_stats (item_id, created_date, updated_date) VALUES (last_insert_rowid(), ?1, ?2);
+        ", (dt.clone(), dt.clone()),
     )?;
     let mut stmt = conn.prepare("
         SELECT
-         item_id, name, description, is_suspended, is_finished
+         item_id, created_date, updated_date, name, description, is_suspended, is_finished
         FROM items
         WHERE item_id = last_insert_rowid()
     ")?;
@@ -26,16 +28,18 @@ pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn item_persist(conn: &Connection, item: &mut Item) -> ArreResult<()> {
+    let dt = Utc::now().to_string();
     conn.execute("
-        INSERT INTO items (name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4);
-        ", (&item.name, &item.description, item.is_suspended, item.is_finished),
+        INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, ?5, ?6);
+        ", (dt.clone(), dt.clone(), &item.name, &item.description, item.is_suspended, item.is_finished),
     )?;
     conn.execute("
-        INSERT INTO item_stats (item_id) VALUES (last_insert_rowid());", (),
+        INSERT INTO item_stats (item_id, created_date, updated_date) VALUES (last_insert_rowid(), ?1, ?2);
+        ", (dt.clone(), dt.clone()),
     )?;
     let mut stmt = conn.prepare("
         SELECT
-         item_id, name, description, is_suspended, is_finished
+         item_id, created_date, updated_date, name, description, is_suspended, is_finished
         FROM items
         WHERE item_id = last_insert_rowid()
     ")?;
@@ -48,9 +52,9 @@ pub fn item_update(conn: &Connection, item: &Item) -> ArreResult<()> {
     conn.execute("
         UPDATE items
         SET
-         name = ?1, description = ?2, is_suspended = ?3, is_finished = ?4
-        WHERE item_id = ?5
-    ", (&item.name, &item.description, &item.is_suspended, &item.is_finished, item.get_id()?),
+         updated_date = ?1, name = ?2, description = ?3, is_suspended = ?4, is_finished = ?5
+        WHERE item_id = ?6
+    ", (Utc::now().to_string(), &item.name, &item.description, &item.is_suspended, &item.is_finished, item.get_id()?),
     )?;
     Ok(())
 }
@@ -58,7 +62,7 @@ pub fn item_update(conn: &Connection, item: &Item) -> ArreResult<()> {
 pub fn item_get(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<Item> {
     let mut stmt = conn.prepare("
         SELECT
-         item_id, name, description, is_suspended, is_finished
+         item_id, created_date, updated_date, name, description, is_suspended, is_finished
         FROM items
         WHERE item_id = ?1
     ")?;
@@ -72,7 +76,7 @@ where C: FromIterator<Item>
 {
     let mut stmt = conn.prepare("
         SELECT
-         item_id, name, description, is_suspended, is_finished
+         item_id, created_date, updated_date, name, description, is_suspended, is_finished
         FROM items
     ")?;
     let result = stmt.query_map([], |row| {
@@ -98,6 +102,8 @@ pub type ItemId = Id<Item>;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Item {
     pub id: Option<ItemId>,
+    pub created_date: ArreDateTime<Utc>,
+    pub updated_date: ArreDateTime<Utc>,
     pub name: String,
     pub description: String,
     pub is_suspended: bool,
@@ -108,19 +114,23 @@ impl Item {
     pub fn from_row(row: &Row) -> Result<Item> {
         Ok(Item {
             id: Some(row.get(0)?),
-            name: row.get(1)?,
-            description: row.get(2)?,
-            is_suspended: row.get(3)?,
-            is_finished: row.get(4)?,
+            created_date: row.get(1)?,
+            updated_date: row.get(2)?,
+            name: row.get(3)?,
+            description: row.get(4)?,
+            is_suspended: row.get(5)?,
+            is_finished: row.get(6)?,
         })
     }
 
     pub fn update_from_row(&mut self, row: &Row) -> Result<()> {
         self.id = Some(row.get(0)?);
-        self.name = row.get(1)?;
-        self.description = row.get(2)?;
-        self.is_suspended = row.get(3)?;
-        self.is_finished = row.get(4)?;
+        self.created_date = row.get(1)?;
+        self.updated_date = row.get(2)?;
+        self.name = row.get(3)?;
+        self.description = row.get(4)?;
+        self.is_suspended = row.get(5)?;
+        self.is_finished = row.get(6)?;
         Ok(())
     }
 
@@ -133,6 +143,8 @@ impl Default for Item {
     fn default() -> Self {
         Self {
             id: None,
+            created_date: Utc::now().into(),
+            updated_date: Utc::now().into(),
             name: String::new(),
             description: String::new(),
             is_suspended: false,

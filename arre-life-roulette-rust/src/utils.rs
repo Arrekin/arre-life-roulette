@@ -1,6 +1,9 @@
+use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::str::FromStr;
+use chrono::{DateTime, TimeZone};
 use rusqlite::types::{FromSql, FromSqlResult, ToSql};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -54,3 +57,49 @@ impl <T>Hash for Id<T> {
         self.id.hash(state);
     }
 }
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+pub struct ArreDateTime<Tz: TimeZone> {
+    date_time: DateTime<Tz>,
+}
+
+impl<Tz: TimeZone> ArreDateTime<Tz> {
+    pub fn new(date_time: DateTime<Tz>) -> Self {
+        ArreDateTime { date_time}
+    }
+}
+
+impl<Tz: TimeZone> FromSql for ArreDateTime<Tz>
+where DateTime<Tz>: FromStr
+{
+    fn column_result(value: rusqlite::types::ValueRef) -> FromSqlResult<Self> {
+        let date_time = String::column_result(value)?
+            .parse::<DateTime<Tz>>()
+            .unwrap_or_else(|_| panic!("Invalid date format in the DB"));
+        Ok(ArreDateTime { date_time })
+    }
+}
+
+impl<Tz: TimeZone> From<DateTime<Tz>> for ArreDateTime<Tz> {
+    fn from(date_time: DateTime<Tz>) -> Self {
+        ArreDateTime { date_time }
+    }
+}
+
+impl<Tz: TimeZone> ToSql for ArreDateTime<Tz>
+where DateTime<Tz>: Display
+{
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput> {
+        let str_dt = self.date_time.to_string();
+        Ok(rusqlite::types::ToSqlOutput::Owned(str_dt.into()))
+    }
+}
+
+impl <Tz: TimeZone> Deref for ArreDateTime<Tz> {
+    type Target = DateTime<Tz>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.date_time
+    }
+}
+
