@@ -5,8 +5,8 @@ use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
-use crate::godot_classes::selection_button::{Content, OnClickBehavior, SelectionButton};
+use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB, SELECTION_BUTTON_PREFAB};
+use crate::godot_classes::element_card::{Content, OnClickBehavior, ElementCard};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -21,14 +21,14 @@ pub struct ListsView {
     base: Base<Control>,
 
     // cached sub-scenes
-    list_selection_button: Gd<PackedScene>,
+    elemental_card_prefab: Gd<PackedScene>,
 
     // cached UI elements
     list_add_button: GdHolder<Button>,
     list_roll_view: GdHolder<RollView>,
     list_modify_view: GdHolder<ListModifyView>,
     lists_grid: GdHolder<GridContainer>,
-    lists_grid_elements: Vec<Gd<SelectionButton>>,
+    lists_grid_elements: Vec<Gd<ElementCard>>,
 
     // state
     lists: Vec<List>,
@@ -66,11 +66,12 @@ impl ListsView {
             // Clear old and create a button for each item
             self.lists_grid_elements.drain(..).for_each(|mut list_btn| list_btn.bind_mut().queue_free());
             let new_lists = self.lists.iter().map(|list| {
-                    let instance = self.list_selection_button
+                    let instance = self.elemental_card_prefab
                         .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
                         .ok_or(ArreError::NullGd("ListsView::refresh_lists_list::list_selection_button".into()))?;
                     self.lists_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.cast::<SelectionButton>();
+                    let mut button = instance.try_cast::<ElementCard>()
+                        .ok_or(ArreError::CastFailed("ElementCard".into(), "ListView::refresh_lists_list".into()))?;
                     {
                         let mut button = button.bind_mut();
                         button.set_list(list.clone());
@@ -97,7 +98,7 @@ impl ControlVirtual for ListsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            list_selection_button: load(SELECTION_BUTTON_PREFAB),
+            elemental_card_prefab: load(ELEMENT_CARD_PREFAB),
 
             list_add_button: GdHolder::default(),
             list_roll_view: GdHolder::default(),

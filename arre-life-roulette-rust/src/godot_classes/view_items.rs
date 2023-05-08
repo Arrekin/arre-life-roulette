@@ -4,9 +4,9 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
+use crate::godot_classes::element_card::{ElementCard, OnClickBehavior, Content};
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
-use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
+use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB, SELECTION_BUTTON_PREFAB};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -22,14 +22,14 @@ pub struct ItemsView {
     base: Base<Control>,
 
     // cached sub-scenes
-    item_selection_button: Gd<PackedScene>,
+    element_card_prefab: Gd<PackedScene>,
 
     // cached UI elements
     pub item_add_button: GdHolder<Button>,
     pub item_modify_view: GdHolder<ItemModifyView>,
     pub item_stats_view: GdHolder<ItemStatsView>,
     pub items_grid: GdHolder<GridContainer>,
-    pub items_grid_elements: Vec<Gd<SelectionButton>>,
+    pub items_grid_elements: Vec<Gd<ElementCard>>,
 
     // state
     items: Vec<Item>,
@@ -70,14 +70,15 @@ impl ItemsView {
             self.items_grid_elements.drain(..).for_each(|mut item_btn| item_btn.bind_mut().queue_free());
             let new_items = self.items.iter().map(
                 |item| {
-                    let instance = self.item_selection_button
+                    let instance = self.element_card_prefab
                         .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
                         .ok_or(ArreError::InstantiateFailed(
                                 SELECTION_BUTTON_PREFAB.into(),
                                 "ItemsView::refresh_items_list".into())
                             )?;
                     self.items_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.cast::<SelectionButton>();
+                    let mut button = instance.try_cast::<ElementCard>()
+                        .ok_or(ArreError::CastFailed("ElementCard".into(), "ItemsView::refresh_items_list".into()))?;
                     {
                         let mut button = button.bind_mut();
                         button.set_item(item.clone());
@@ -104,7 +105,7 @@ impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            item_selection_button: load(SELECTION_BUTTON_PREFAB),
+            element_card_prefab: load(ELEMENT_CARD_PREFAB),
 
             item_add_button: GdHolder::default(),
             item_modify_view: GdHolder::default(),
@@ -121,21 +122,17 @@ impl ControlVirtual for ItemsView {
             self.item_add_button = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ItemAddDialogButton");
             self.item_add_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_item_add_button_up"),
+                Callable::from_object_method(base.share(), "on_item_add_button_up"),
                 0,
             );
             self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
             self.item_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_items_list"),
+                Callable::from_object_method(base.share(), "refresh_items_list"),
                 0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
             self.items_grid = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/ItemsListGridContainer");
-
-            if self.is_visible() {
-                self.refresh_items_list();
-            }
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
@@ -143,19 +140,23 @@ impl ControlVirtual for ItemsView {
                 let mut signals = signals.bind_mut();
                 signals.connect(
                     "item_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "on_view_selected"),
+                    Callable::from_object_method(base.share(), "on_view_selected"),
                     0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "hide"),
+                    Callable::from_object_method(base.share(), "hide"),
                     0,
                 );
                 signals.connect(
                     "tag_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "hide"),
+                    Callable::from_object_method(base.share(), "hide"),
                     0,
                 );
+            }
+
+            if self.is_visible() {
+                self.refresh_items_list();
             }
         }: ArreResult<()> {
             Ok(_) => {}

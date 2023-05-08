@@ -45,7 +45,6 @@ theme = ExtResource("1_666we")
 text = "Tags"
 
 [node name="ItemsView" type="ItemsView" parent="UI/MainView"]
-visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -68,8 +67,8 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
+theme_override_constants/h_separation = 28
+theme_override_constants/v_separation = 28
 columns = 4
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
@@ -84,6 +83,7 @@ size_flags_horizontal = 4
 text = "Add Item"
 
 [node name="ListsView" type="ListsView" parent="UI/MainView"]
+visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -104,8 +104,8 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 6
 size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
+theme_override_constants/h_separation = 28
+theme_override_constants/v_separation = 28
 columns = 4
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ListsView/VBoxContainer"]

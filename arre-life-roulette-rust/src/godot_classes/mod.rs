@@ -10,3 +10,4 @@ pub mod resources;
 pub mod singletons;
 pub mod view_logs;
 pub mod view_item_stats;
+pub mod element_card;

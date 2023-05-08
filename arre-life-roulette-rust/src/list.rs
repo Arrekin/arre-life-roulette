@@ -101,7 +101,7 @@ pub fn list_items_get<C>(conn: &Connection, list_id: ListId) -> Result<C>
 where C: FromIterator<Item>
 {
     let mut stmt = conn.prepare("
-        SELECT i.item_id, i.name, i.description, i.is_suspended, i.is_finished
+        SELECT i.item_id, i.created_date, i.updated_date, i.name, i.description, i.is_suspended, i.is_finished
         FROM items i
         JOIN item_list_map ilm ON i.item_id = ilm.item_id
         WHERE ilm.list_id = ?1",
@@ -132,7 +132,7 @@ pub fn list_items_get_complement<C>(conn: &Connection, list_id: ListId) -> Resul
 where C: FromIterator<Item>
 {
     let mut stmt = conn.prepare("
-        SELECT i.item_id, i.name, i.description, i.is_suspended, i.is_finished
+        SELECT i.item_id, i.created_date, i.updated_date, i.name, i.description, i.is_suspended, i.is_finished
         FROM items i
         WHERE i.item_id NOT IN (
           SELECT ilp.item_id
