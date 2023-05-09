@@ -1,12 +1,12 @@
 use godot::builtin::{Callable};
-use godot::engine::{Control, ControlVirtual, Button, GridContainer};
+use godot::engine::{Control, ControlVirtual, Button, HFlowContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::element_card::{ElementCard, OnClickBehavior, Content};
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB, SELECTION_BUTTON_PREFAB};
+use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -28,7 +28,7 @@ pub struct ItemsView {
     pub item_add_button: GdHolder<Button>,
     pub item_modify_view: GdHolder<ItemModifyView>,
     pub item_stats_view: GdHolder<ItemStatsView>,
-    pub items_grid: GdHolder<GridContainer>,
+    pub items_grid: GdHolder<HFlowContainer>,
     pub items_grid_elements: Vec<Gd<ElementCard>>,
 
     // state
@@ -73,9 +73,9 @@ impl ItemsView {
                     let instance = self.element_card_prefab
                         .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
                         .ok_or(ArreError::InstantiateFailed(
-                                SELECTION_BUTTON_PREFAB.into(),
-                                "ItemsView::refresh_items_list".into())
-                            )?;
+                            ELEMENT_CARD_PREFAB.into(),
+                            "ItemsView::refresh_items_list".into()
+                        ))?;
                     self.items_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
                     let mut button = instance.try_cast::<ElementCard>()
                         .ok_or(ArreError::CastFailed("ElementCard".into(), "ItemsView::refresh_items_list".into()))?;
@@ -132,7 +132,7 @@ impl ControlVirtual for ItemsView {
                 0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
-            self.items_grid = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/ItemsListGridContainer");
+            self.items_grid = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/ItemsListHFlowContainer");
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");

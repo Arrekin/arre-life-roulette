@@ -45,6 +45,7 @@ theme = ExtResource("1_666we")
 text = "Tags"
 
 [node name="ItemsView" type="ItemsView" parent="UI/MainView"]
+visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -62,14 +63,12 @@ alignment = 1
 [node name="ItemsListScrollContainer" type="ScrollContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="ItemsListGridContainer" type="GridContainer" parent="UI/MainView/ItemsView/VBoxContainer/ItemsListScrollContainer"]
+[node name="ItemsListHFlowContainer" type="HFlowContainer" parent="UI/MainView/ItemsView/VBoxContainer/ItemsListScrollContainer"]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 28
-theme_override_constants/v_separation = 28
-columns = 4
+size_flags_horizontal = 3
+size_flags_vertical = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
 layout_mode = 2
@@ -83,7 +82,6 @@ size_flags_horizontal = 4
 text = "Add Item"
 
 [node name="ListsView" type="ListsView" parent="UI/MainView"]
-visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -100,13 +98,10 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ListsListGridContainer" type="GridContainer" parent="UI/MainView/ListsView/VBoxContainer/ListsListScrollContainer"]
+[node name="ListsListHFlowContainer" type="HFlowContainer" parent="UI/MainView/ListsView/VBoxContainer/ListsListScrollContainer"]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 28
-theme_override_constants/v_separation = 28
-columns = 4
+size_flags_horizontal = 3
+size_flags_vertical = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ListsView/VBoxContainer"]
 layout_mode = 2

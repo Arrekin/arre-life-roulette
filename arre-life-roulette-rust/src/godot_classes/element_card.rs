@@ -115,6 +115,11 @@ impl MarginContainerVirtual for ElementCard {
 
     fn ready(&mut self) {
         match try {
+            self.add_theme_constant_override("margin_left".into(), 16);
+            self.add_theme_constant_override("margin_top".into(), 16);
+            self.add_theme_constant_override("margin_right".into(), 16);
+            self.add_theme_constant_override("margin_bottom".into(), 16);
+
             let base = &self.base;
             self.button = GdHolder::from_path(base, "Button");
             self.button.ok_mut()?.connect(

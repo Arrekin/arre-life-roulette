@@ -1,11 +1,11 @@
 use godot::builtin::{Callable};
-use godot::engine::{Control, ControlVirtual, Button, GridContainer};
+use godot::engine::{Control, ControlVirtual, Button, HFlowContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB, SELECTION_BUTTON_PREFAB};
+use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB};
 use crate::godot_classes::element_card::{Content, OnClickBehavior, ElementCard};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
@@ -27,7 +27,7 @@ pub struct ListsView {
     list_add_button: GdHolder<Button>,
     list_roll_view: GdHolder<RollView>,
     list_modify_view: GdHolder<ListModifyView>,
-    lists_grid: GdHolder<GridContainer>,
+    lists_grid: GdHolder<HFlowContainer>,
     lists_grid_elements: Vec<Gd<ElementCard>>,
 
     // state
@@ -68,7 +68,10 @@ impl ListsView {
             let new_lists = self.lists.iter().map(|list| {
                     let instance = self.elemental_card_prefab
                         .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
-                        .ok_or(ArreError::NullGd("ListsView::refresh_lists_list::list_selection_button".into()))?;
+                        .ok_or(ArreError::InstantiateFailed(
+                            ELEMENT_CARD_PREFAB.into(),
+                            "ListsView::refresh_lists_list".into()
+                        ))?;
                     self.lists_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
                     let mut button = instance.try_cast::<ElementCard>()
                         .ok_or(ArreError::CastFailed("ElementCard".into(), "ListView::refresh_lists_list".into()))?;
@@ -130,7 +133,7 @@ impl ControlVirtual for ListsView {
                 Callable::from_object_method(self.base.share(), "refresh_lists_list"),
                 0,
             );
-            self.lists_grid = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/ListsListGridContainer");
+            self.lists_grid = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/ListsListHFlowContainer");
 
             if self.is_visible() {
                 self.refresh_lists_list();
