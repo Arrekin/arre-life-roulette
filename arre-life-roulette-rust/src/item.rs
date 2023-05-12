@@ -85,6 +85,30 @@ where C: FromIterator<Item>
     Ok(result)
 }
 
+pub fn item_search<C>(conn: &Connection, search_term: impl AsRef<str>) -> ArreResult<C>
+where C: FromIterator<Item>
+{
+    let search_term = search_term.as_ref();
+    let mut stmt = conn.prepare("
+        SELECT
+         i.item_id, i.created_date, i.updated_date, i.name, i.description, i.is_suspended, i.is_finished
+        FROM items i
+        JOIN (
+            SELECT
+             rowid, rank
+            FROM
+             items_search_index
+            WHERE
+                items_search_index MATCH ?1
+        ) search ON i.item_id = search.rowid
+        ORDER BY search.rank DESC
+    ")?;
+    let result = stmt.query_map([search_term], |row| {
+        Item::from_row(row)
+    })?.collect::<Result<C>>()?;
+    Ok(result)
+}
+
 pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
     let id = id.into();
     conn.execute("DELETE FROM items WHERE item_id = ?1;", (id,))?;
@@ -287,6 +311,56 @@ mod tests {
         assert_eq!(items.len(), expected_number_of_items);
         Ok(())
     }
+
+    #[rstest]
+    #[case("Zero", 0)]
+    #[case("onE", 1)]
+    #[case("TwO", 2)]
+    #[case("three", 3)]
+    fn item_search_successful(
+        conn: Connection,
+        #[case] search_term: String,
+        #[case] expected_number_of_items: usize
+    ) -> ArreResult<()> {
+        item_create(&conn, "One", "Not number three at all")?;
+        item_create(&conn, "Not ThRee", "but it's number TWO!")?;
+        item_create(&conn, "Finally Three :o", "Not two, it means :(")?;
+        let items = item_search::<Vec<_>>(&conn, search_term)?;
+        assert_eq!(items.len(), expected_number_of_items);
+        Ok(())
+    }
+
+    #[rstest]
+    fn item_search_after_update(conn: Connection) -> ArreResult<()> {
+        let mut item = item_create(&conn, "Glorious Item", "Beyond Comprehension")?;
+        assert_eq!(&item_search::<Vec<_>>(&conn, "Glorious")?[0].name as &str, "Glorious Item");
+        item.name = "Heavenly Item".into();
+        item_update(&conn, &item)?;
+        assert_eq!(item_search::<Vec<_>>(&conn, "Glorious")?.len(), 0);
+        assert_eq!(&item_search::<Vec<_>>(&conn, "Heavenly")?[0].name as &str, "Heavenly Item");
+        Ok(())
+    }
+
+    #[rstest]
+    fn item_search_index_purge_after_delete(conn: Connection) -> ArreResult<()> {
+        let count_fn = |conn: &Connection| -> Result<i64> {
+            conn.query_row_and_then(
+                "SELECT count(*) FROM items_search_index;",
+                (),
+                |row| {
+                    row.get(0)
+                }
+            )
+        };
+        let mut tf = TestFactory::new(&conn);
+        assert_eq!(count_fn(&conn)?, 0);
+        let items = tf.create_items(10)?;
+        assert_eq!(count_fn(&conn)?, 10);
+        items.into_iter().for_each(|item| item_delete(&conn, item.get_id().unwrap()).unwrap());
+        assert_eq!(count_fn(&conn)?, 0);
+        Ok(())
+    }
+
 
     #[rstest]
     fn hash_test() {

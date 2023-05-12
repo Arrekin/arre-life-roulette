@@ -26,6 +26,7 @@ mouse_filter = 2
 
 [node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 15
 text = "Vroom"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -37,6 +38,7 @@ layout_mode = 2
 [node name="DescriptionLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_font_sizes/font_size = 12
 text = "1
 2
 333333333333333333333
