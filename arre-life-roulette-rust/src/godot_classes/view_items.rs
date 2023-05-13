@@ -1,5 +1,5 @@
 use godot::builtin::{Callable};
-use godot::engine::{Control, ControlVirtual, Button, HFlowContainer};
+use godot::engine::{Control, ControlVirtual, Button, HFlowContainer, LineEdit};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
@@ -12,7 +12,7 @@ use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::godot_classes::view_item_modify::ItemModifyView;
 use crate::godot_classes::view_item_stats::ItemStatsView;
-use crate::item::{Item, item_get_all};
+use crate::item::{Item, item_get_all, item_search};
 use crate::item_stats::item_stats_get;
 
 #[derive(GodotClass)]
@@ -30,9 +30,11 @@ pub struct ItemsView {
     pub item_stats_view: GdHolder<ItemStatsView>,
     pub items_grid: GdHolder<HFlowContainer>,
     pub items_grid_elements: Vec<Gd<ElementCard>>,
+    pub searchbar: GdHolder<LineEdit>,
 
     // state
     items: Vec<Item>,
+    search_term: Option<String>,
 }
 
 #[godot_api]
@@ -53,20 +55,47 @@ impl ItemsView {
 
     #[func]
     fn on_view_selected(&mut self) {
-        self.refresh_items_list();
+        self.refresh_full();
         self.show();
     }
 
     #[func]
-    fn refresh_items_list(&mut self) {
+    fn on_search_request(&mut self, search_term: GodotString) {
+        let search_term = search_term.to_string();
+        self.search_term = if search_term.is_empty() { None } else { Some(search_term) };
+        self.refresh_full();
+    }
+
+    #[func]
+    fn refresh_full(&mut self) {
+        self.refresh_state();
+        self.refresh_display()
+    }
+
+    #[func]
+    fn refresh_state(&mut self) {
         match try {
-            let self_reference = self.base.share().cast::<Self>();
-            // Get current list of all items from the DB
             let globals = get_singleton::<Globals>("Globals");
             let connection = &globals.bind().connection;
-            self.items = item_get_all(connection)?;
+            match &self.search_term {
+                Some(search_term) => {
+                    self.items = item_search(connection, search_term)?;
+                },
+                None => { // Get list of all items from the DB
+                    self.items = item_get_all(connection)?;
+                }
+            }
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
+        }
+    }
 
-            // Clear old and create a button for each item
+    #[func]
+    fn refresh_display(&mut self) {
+        match try {
+            let self_reference = self.base.share().cast::<Self>();
+            // Clear old cards and then create a new card for each item
             self.items_grid_elements.drain(..).for_each(|mut item_btn| item_btn.bind_mut().queue_free());
             let new_items = self.items.iter().map(
                 |item| {
@@ -112,8 +141,10 @@ impl ControlVirtual for ItemsView {
             item_stats_view: GdHolder::default(),
             items_grid: GdHolder::default(),
             items_grid_elements: vec![],
+            searchbar: GdHolder::default(),
 
             items: vec![],
+            search_term: None,
         }
     }
     fn ready(&mut self) {
@@ -128,11 +159,18 @@ impl ControlVirtual for ItemsView {
             self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
             self.item_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                Callable::from_object_method(base.share(), "refresh_items_list"),
+                Callable::from_object_method(base.share(), "refresh_full"),
                 0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
             self.items_grid = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/ItemsListHFlowContainer");
+            self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
+            self.searchbar.ok_mut()?.connect(
+                "text_submitted".into(),
+                Callable::from_object_method(base.share(), "on_search_request"),
+                0,
+            );
+
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
@@ -156,7 +194,7 @@ impl ControlVirtual for ItemsView {
             }
 
             if self.is_visible() {
-                self.refresh_items_list();
+                self.refresh_full();
             }
         }: ArreResult<()> {
             Ok(_) => {}

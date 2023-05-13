@@ -1,6 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://ccl2262542mx2"]
+[gd_scene load_steps=4 format=3 uid="uid://ccl2262542mx2"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
+
+[sub_resource type="GDScript" id="GDScript_jaus0"]
+script/source = "extends LineEdit
+
+
+func _input(event):
+    if (event is InputEventMouseButton) and event.pressed:
+        var evLocal = make_input_local(event)
+        if !Rect2(Vector2(0,0), self.size).has_point(evLocal.position):
+            self.release_focus()
+"
 
 [sub_resource type="LabelSettings" id="LabelSettings_20myd"]
 font_size = 30
@@ -45,7 +56,6 @@ theme = ExtResource("1_666we")
 text = "Tags"
 
 [node name="ItemsView" type="ItemsView" parent="UI/MainView"]
-visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -60,6 +70,16 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
+[node name="SearchBarLineEdit" type="LineEdit" parent="UI/MainView/ItemsView/VBoxContainer"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+placeholder_text = "🔍 Search"
+clear_button_enabled = true
+select_all_on_focus = true
+caret_blink = true
+script = SubResource("GDScript_jaus0")
+
 [node name="ItemsListScrollContainer" type="ScrollContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -69,11 +89,12 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2
+alignment = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 15
 
 [node name="ItemAddDialogButton" type="Button" parent="UI/MainView/ItemsView/VBoxContainer/MarginContainer"]
 custom_minimum_size = Vector2(200, 50)
@@ -82,6 +103,7 @@ size_flags_horizontal = 4
 text = "Add Item"
 
 [node name="ListsView" type="ListsView" parent="UI/MainView"]
+visible = false
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
@@ -102,11 +124,12 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2
+alignment = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/MainView/ListsView/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 15
 
 [node name="ListAddDialogButton" type="Button" parent="UI/MainView/ListsView/VBoxContainer/MarginContainer"]
 custom_minimum_size = Vector2(200, 50)
