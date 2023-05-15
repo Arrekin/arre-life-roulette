@@ -1,12 +1,10 @@
 use godot::builtin::{Callable};
-use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, GridContainer, Label};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
+use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
-use crate::errors::{ArreError, ArreResult};
+use crate::errors::{ArreResult};
+use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::SELECTION_BUTTON_PREFAB;
-use crate::godot_classes::selection_button::{SelectionButton, OnClickBehavior, Content};
+use crate::godot_classes::element_card::{OnClickBehavior, Content};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::item::{Item, item_get_all, items_to_ids};
@@ -29,17 +27,12 @@ pub struct ListModifyView {
     #[base]
     base: Base<Panel>,
 
-    // cached sub-scenes
-    item_selection_button: Gd<PackedScene>,
-
     // cached elements
     title_label: GdHolder<Label>,
     name_line_edit: GdHolder<LineEdit>,
     description_text_edit: GdHolder<TextEdit>,
-    items_in_grid: GdHolder<GridContainer>,
-    items_in_grid_elements: Vec<Gd<SelectionButton>>,
-    items_out_grid: GdHolder<GridContainer>,
-    items_out_grid_elements: Vec<Gd<SelectionButton>>,
+    cards_in_container: GdHolder<CardsFlowContainer>,
+    cards_out_container: GdHolder<CardsFlowContainer>,
     apply_button: GdHolder<Button>,
     close_button: GdHolder<Button>,
 
@@ -49,9 +42,8 @@ pub struct ListModifyView {
     items_out: Vec<Item>,
     mode: Mode,
 
-    // internals
-    needs_full_refresh: bool,
-    needs_items_refresh: bool,
+    // internal
+    needs_deferred_display_update: bool,
 }
 
 #[godot_api]
@@ -83,14 +75,15 @@ impl ListModifyView {
                     list_items_update(connection, self.list.get_id()?, items)?;
                 }
             }
-            self.needs_full_refresh = true;
+            self.refresh_state();
+            self.refresh_display();
         }: ArreResult<()> {
             Ok(_) => {}
             Err(err) => { log_error(err);}
         }
     }
 
-    fn refresh_ui_display(&mut self) {
+    fn refresh_display(&mut self) {
         match try {
             self.name_line_edit.ok_mut()?.set_text(self.list.name.clone().into());
             self.description_text_edit.ok_mut()?.set_text(self.list.description.clone().into());
@@ -104,70 +97,26 @@ impl ListModifyView {
                     self.apply_button.ok_mut()?.set_text(UI_TEXT_MODIFY.into());
                 }
             }
-        }: ArreResult<()> {
-            Ok(_) => {}
-            Err(err) => { log_error(err); }
-        }
-    }
 
-    fn refresh_items_in_display(&mut self) {
-        match try {
-            // Clear old and create a button for each item
-            self.items_in_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
-            let new_items = self.items_in.iter().map(
-                |item| {
-                    let instance = self.item_selection_button
-                        .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
-                        .ok_or(ArreError::InstantiateFailed(
-                            SELECTION_BUTTON_PREFAB.into(),
-                            "ListViewModify::refresh_items_in_display".into())
-                        )?;
-                    self.items_in_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.cast::<SelectionButton>();
-                    {
-                        let mut button = button.bind_mut();
-                        button.set_item(item.clone());
-                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
-                            parent: self.base.share().cast::<Self>(),
-                            in_or_out: InOrOut::In
-                        }));
-                    }
-                    Ok(button)
+            let self_reference = self.base.share().cast::<Self>();
+            self.cards_in_container.ok_mut()?.bind_mut().set_cards(
+                self.items_in.clone(),
+                |mut card| {
+                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
+                        parent: self_reference.share(),
+                        in_or_out: InOrOut::In
+                    }));
                 }
-            ).collect::<ArreResult<Vec<_>>>()?;
-            self.items_in_grid_elements.extend(new_items);
-        }: ArreResult<()> {
-            Ok(_) => {}
-            Err(err) => { log_error(err);}
-        }
-    }
-
-    fn refresh_items_out_display(&mut self) {
-        match try {
-            // Clear old and create a button for each item
-            self.items_out_grid_elements.drain(..).for_each(|mut item| item.bind_mut().queue_free());
-            let new_items = self.items_out.iter().map(
-                |item| {
-                    let instance = self.item_selection_button
-                        .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
-                        .ok_or(ArreError::InstantiateFailed(
-                            SELECTION_BUTTON_PREFAB.into(),
-                            "ListViewModify::refresh_items_out_display".into())
-                        )?;
-                    self.items_out_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.cast::<SelectionButton>();
-                    {
-                        let mut button = button.bind_mut();
-                        button.set_item(item.clone());
-                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
-                            parent: self.base.share().cast::<Self>(),
-                            in_or_out: InOrOut::Out
-                        }));
-                    }
-                    Ok(button)
+            );
+            self.cards_out_container.ok_mut()?.bind_mut().set_cards(
+                self.items_out.clone(),
+                |mut card| {
+                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
+                        parent: self_reference.share(),
+                        in_or_out: InOrOut::Out
+                    }))
                 }
-            ).collect::<ArreResult<Vec<_>>>()?;
-            self.items_out_grid_elements.extend(new_items);
+            )
         }: ArreResult<()> {
             Ok(_) => {}
             Err(err) => { log_error(err);}
@@ -183,18 +132,18 @@ impl ListModifyView {
     pub fn set_mode_add(&mut self) {
         self.mode = Mode::Add;
         self.list = List::default();
-        self.refresh_items_in_out();
-        self.needs_full_refresh = true;
+        self.refresh_state();
+        self.refresh_display();
     }
 
     pub fn set_mode_edit(&mut self, list: List) {
         self.mode = Mode::Edit;
         self.list = list;
-        self.refresh_items_in_out();
-        self.needs_full_refresh = true;
+        self.refresh_state();
+        self.refresh_display();
     }
 
-    fn refresh_items_in_out(&mut self) {
+    fn refresh_state(&mut self) {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
         match self.mode {
@@ -218,15 +167,11 @@ impl PanelVirtual for ListModifyView {
         Self {
             base,
 
-            item_selection_button: load(SELECTION_BUTTON_PREFAB),
-
             title_label: GdHolder::default(),
             name_line_edit: GdHolder::default(),
             description_text_edit: GdHolder::default(),
-            items_in_grid: GdHolder::default(),
-            items_in_grid_elements: vec![],
-            items_out_grid: GdHolder::default(),
-            items_out_grid_elements: vec![],
+            cards_in_container: GdHolder::default(),
+            cards_out_container: GdHolder::default(),
             apply_button: GdHolder::default(),
             close_button: GdHolder::default(),
 
@@ -235,8 +180,7 @@ impl PanelVirtual for ListModifyView {
             items_out: vec![],
             mode: Mode::Add,
 
-            needs_full_refresh: false,
-            needs_items_refresh: false,
+            needs_deferred_display_update: false
         }
     }
     fn ready(&mut self) {
@@ -245,8 +189,8 @@ impl PanelVirtual for ListModifyView {
             self.title_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/TitleLabel");
             self.name_line_edit = GdHolder::from_path(base, "VBoxContainer/ListNameLineEdit");
             self.description_text_edit = GdHolder::from_path(base, "VBoxContainer/ListDescriptionTextEdit");
-            self.items_in_grid = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ListItemsInScrollContainer/ListItemsInGridContainer");
-            self.items_out_grid = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ListItemsOutScrollContainer/ListItemsOutGridContainer");
+            self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerIn/CardsInContainer");
+            self.cards_out_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerOut/CardsOutContainer");
             self.apply_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/ListApplyButton");
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
@@ -267,15 +211,9 @@ impl PanelVirtual for ListModifyView {
     }
 
     fn process(&mut self, _delta: f64) {
-        if self.needs_full_refresh {
-            self.refresh_ui_display();
-            self.refresh_items_in_display();
-            self.refresh_items_out_display();
-            self.needs_full_refresh = false;
-        } else if self.needs_items_refresh {
-            self.refresh_items_in_display();
-            self.refresh_items_out_display();
-            self.needs_items_refresh = false;
+        if self.needs_deferred_display_update {
+            self.needs_deferred_display_update = false;
+            self.refresh_display();
         }
     }
 }
@@ -305,7 +243,7 @@ impl OnClickBehavior for OnClickBehaviorSwitchItemsInOut {
                     parent.items_in.push(item.clone());
                 }
             }
-            parent.needs_items_refresh = true;
+            parent.needs_deferred_display_update = true;
         }
     }
 }

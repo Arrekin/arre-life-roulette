@@ -1,12 +1,11 @@
 use godot::builtin::{Callable};
-use godot::engine::{Control, ControlVirtual, Button, HFlowContainer, LineEdit};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
+use godot::engine::{Control, ControlVirtual, Button, LineEdit};
+use godot::engine::utilities::push_error;
 use godot::prelude::*;
-use crate::errors::{ArreError, ArreResult};
-use crate::godot_classes::element_card::{ElementCard, OnClickBehavior, Content};
+use crate::errors::{ArreResult};
+use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
+use crate::godot_classes::element_card::{OnClickBehavior, Content};
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -21,16 +20,14 @@ pub struct ItemsView {
     #[base]
     base: Base<Control>,
 
-    // cached sub-scenes
-    element_card_prefab: Gd<PackedScene>,
-
-    // cached UI elements
+    // cached internal UI elements
     pub item_add_button: GdHolder<Button>,
+    pub cards_container: GdHolder<CardsFlowContainer>,
+    pub searchbar: GdHolder<LineEdit>,
+
+    // cached external UI elements
     pub item_modify_view: GdHolder<ItemModifyView>,
     pub item_stats_view: GdHolder<ItemStatsView>,
-    pub items_grid: GdHolder<HFlowContainer>,
-    pub items_grid_elements: Vec<Gd<ElementCard>>,
-    pub searchbar: GdHolder<LineEdit>,
 
     // state
     items: Vec<Item>,
@@ -69,7 +66,7 @@ impl ItemsView {
     #[func]
     fn refresh_full(&mut self) {
         self.refresh_state();
-        self.refresh_display()
+        self.refresh_display();
     }
 
     #[func]
@@ -95,33 +92,17 @@ impl ItemsView {
     fn refresh_display(&mut self) {
         match try {
             let self_reference = self.base.share().cast::<Self>();
-            // Clear old cards and then create a new card for each item
-            self.items_grid_elements.drain(..).for_each(|mut item_btn| item_btn.bind_mut().queue_free());
-            let new_items = self.items.iter().map(
-                |item| {
-                    let instance = self.element_card_prefab
-                        .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
-                        .ok_or(ArreError::InstantiateFailed(
-                            ELEMENT_CARD_PREFAB.into(),
-                            "ItemsView::refresh_items_list".into()
-                        ))?;
-                    self.items_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.try_cast::<ElementCard>()
-                        .ok_or(ArreError::CastFailed("ElementCard".into(), "ItemsView::refresh_items_list".into()))?;
-                    {
-                        let mut button = button.bind_mut();
-                        button.set_item(item.clone());
-                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowItemStatsView {
-                            parent: self_reference.share(),
-                        }));
-                        button.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView {
-                            parent: self_reference.share(),
-                        }));
-                    }
-                    Ok(button)
+            self.cards_container.ok_mut()?.bind_mut().set_cards(
+                self.items.clone(),
+                |mut card| {
+                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowItemStatsView {
+                        parent: self_reference.share(),
+                    }));
+                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView {
+                        parent: self_reference.share(),
+                    }));
                 }
-            ).collect::<ArreResult<Vec<_>>>()?;
-            self.items_grid_elements.extend(new_items);
+            );
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
@@ -134,15 +115,17 @@ impl ControlVirtual for ItemsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            element_card_prefab: load(ELEMENT_CARD_PREFAB),
 
+            // cached internal UI elements
             item_add_button: GdHolder::default(),
-            item_modify_view: GdHolder::default(),
-            item_stats_view: GdHolder::default(),
-            items_grid: GdHolder::default(),
-            items_grid_elements: vec![],
+            cards_container: GdHolder::default(),
             searchbar: GdHolder::default(),
 
+            // cached external UI elements
+            item_modify_view: GdHolder::default(),
+            item_stats_view: GdHolder::default(),
+
+            // state
             items: vec![],
             search_term: None,
         }
@@ -156,6 +139,14 @@ impl ControlVirtual for ItemsView {
                 Callable::from_object_method(base.share(), "on_item_add_button_up"),
                 0,
             );
+            self.cards_container = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/CardsFlowContainer");
+            self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
+            self.searchbar.ok_mut()?.connect(
+                "text_submitted".into(),
+                Callable::from_object_method(base.share(), "on_search_request"),
+                0,
+            );
+
             self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
             self.item_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
@@ -163,13 +154,6 @@ impl ControlVirtual for ItemsView {
                 0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
-            self.items_grid = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/ItemsListHFlowContainer");
-            self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
-            self.searchbar.ok_mut()?.connect(
-                "text_submitted".into(),
-                Callable::from_object_method(base.share(), "on_search_request"),
-                0,
-            );
 
 
             // Get singleton and connect to global signals(show / hide)
@@ -198,7 +182,10 @@ impl ControlVirtual for ItemsView {
             }
         }: ArreResult<()> {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err(e) => {
+                push_error("ItemsView::ready: ".to_variant(), &[e.to_string().to_variant()]);
+                log_error(e)
+            },
         }
     }
 }

@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://ccl2262542mx2"]
+[gd_scene load_steps=4 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 
@@ -85,7 +85,7 @@ layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ItemsListHFlowContainer" type="HFlowContainer" parent="UI/MainView/ItemsView/VBoxContainer/ItemsListScrollContainer"]
+[node name="CardsFlowContainer" type="CardsFlowContainer" parent="UI/MainView/ItemsView/VBoxContainer/ItemsListScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2
@@ -439,32 +439,28 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ListItemsInScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="ScrollContainerIn" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ListItemsInGridContainer" type="GridContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ListItemsInScrollContainer"]
+[node name="CardsInContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ScrollContainerIn"]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
-columns = 4
+size_flags_horizontal = 3
+size_flags_vertical = 2
+alignment = 1
 
 [node name="HSeparator2" type="HSeparator" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="ListItemsOutScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="ScrollContainerOut" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ListItemsOutGridContainer" type="GridContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ListItemsOutScrollContainer"]
+[node name="CardsOutContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ScrollContainerOut"]
 layout_mode = 2
-size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/h_separation = 3
-theme_override_constants/v_separation = 3
-columns = 4
+size_flags_horizontal = 3
+size_flags_vertical = 2
+alignment = 1
 
 [node name="HSeparator3" type="HSeparator" parent="UI/ListModifyView/VBoxContainer"]
 layout_mode = 2
@@ -473,7 +469,7 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 8
 theme_override_constants/margin_top = 10
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_bottom = 15
 
 [node name="ListApplyButton" type="Button" parent="UI/ListModifyView/VBoxContainer/BottomMarginContainer"]
 self_modulate = Color(0, 1, 0.0588235, 1)
