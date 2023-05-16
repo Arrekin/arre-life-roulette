@@ -1,4 +1,3 @@
-use godot::builtin::{Callable};
 use godot::engine::{Control, ControlVirtual, Button, HFlowContainer};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
@@ -118,26 +117,22 @@ impl ControlVirtual for ListsView {
             self.list_add_button = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ListAddDialogButton");
             self.list_add_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_list_add_button_up"),
+                base.callable("on_list_add_button_up"),
                 0,
             );
             self.list_roll_view = GdHolder::from_path(base, "../../RollView");
             self.list_roll_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_lists_list"),
+                base.callable("refresh_lists_list"),
                 0,
             );
             self.list_modify_view = GdHolder::from_path(base, "../../ListModifyView");
             self.list_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                Callable::from_object_method(self.base.share(), "refresh_lists_list"),
+                base.callable("refresh_lists_list"),
                 0,
             );
             self.lists_grid = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/ListsListHFlowContainer");
-
-            if self.is_visible() {
-                self.refresh_lists_list();
-            }
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
@@ -145,19 +140,23 @@ impl ControlVirtual for ListsView {
                 let mut signals = signals.bind_mut();
                 signals.connect(
                     "item_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "hide"),
+                    base.callable("hide"),
                     0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "on_view_selected"),
+                    base.callable("on_view_selected"),
                     0,
                 );
                 signals.connect(
                     "tag_view_tab_selected".into(),
-                    Callable::from_object_method(self.base.share(), "hide"),
+                    base.callable("hide"),
                     0,
                 );
+
+                if self.is_visible() {
+                    self.refresh_lists_list();
+                }
             }
         }: ArreResult<()> {
             Ok(_) => {},

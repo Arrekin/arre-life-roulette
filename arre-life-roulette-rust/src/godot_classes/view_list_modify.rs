@@ -1,4 +1,3 @@
-use godot::builtin::{Callable};
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
@@ -194,13 +193,13 @@ impl PanelVirtual for ListModifyView {
             self.apply_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/ListApplyButton");
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_apply_list_button_up"),
+                base.callable("on_apply_list_button_up"),
                 0,
             );
             self.close_button = GdHolder::from_path(base, "DialogCloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_dialog_close_button_up"),
+                base.callable("on_dialog_close_button_up"),
                 0,
             );
         }: ArreResult<()> {

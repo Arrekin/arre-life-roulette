@@ -1,4 +1,3 @@
-use godot::builtin::{Callable};
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::engine::utilities::push_error;
 use godot::prelude::*;
@@ -136,21 +135,21 @@ impl ControlVirtual for ItemsView {
             self.item_add_button = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ItemAddDialogButton");
             self.item_add_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(base.share(), "on_item_add_button_up"),
+                base.callable("on_item_add_button_up"),
                 0,
             );
             self.cards_container = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/CardsFlowContainer");
             self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
-                Callable::from_object_method(base.share(), "on_search_request"),
+                base.callable("on_search_request"),
                 0,
             );
 
             self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
             self.item_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                Callable::from_object_method(base.share(), "refresh_full"),
+                base.callable("refresh_full"),
                 0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
@@ -162,17 +161,17 @@ impl ControlVirtual for ItemsView {
                 let mut signals = signals.bind_mut();
                 signals.connect(
                     "item_view_tab_selected".into(),
-                    Callable::from_object_method(base.share(), "on_view_selected"),
+                    base.callable("on_view_selected"),
                     0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
-                    Callable::from_object_method(base.share(), "hide"),
+                    base.callable("hide"),
                     0,
                 );
                 signals.connect(
                     "tag_view_tab_selected".into(),
-                    Callable::from_object_method(base.share(), "hide"),
+                    base.callable("hide"),
                     0,
                 );
             }

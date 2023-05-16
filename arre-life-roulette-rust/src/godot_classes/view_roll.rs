@@ -1,5 +1,4 @@
 use chrono::{DateTime, Duration, Utc};
-use godot::builtin::{Callable};
 use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
 use rand::Rng;
@@ -187,7 +186,7 @@ impl PanelVirtual for RollView {
             self.work_cancel_button = GdHolder::from_path(base, "WorkCancelButton");
             self.work_cancel_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_work_cancel_button_up"),
+                base.callable("on_work_cancel_button_up"),
                 0,
             );
             self.list_name_label = GdHolder::from_path(base, "ListNameLabel");
@@ -196,7 +195,7 @@ impl PanelVirtual for RollView {
             self.roll_start_button = GdHolder::from_path(base, "AwaitingSubview/RollStartButton");
             self.roll_start_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_roll_start_button_up"),
+                base.callable("on_roll_start_button_up"),
                 0,
             );
 
@@ -207,7 +206,7 @@ impl PanelVirtual for RollView {
             self.work_finish_button = GdHolder::from_path(base, "WorkAssignedSubview/WorkFinishButton");
             self.work_finish_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_work_finish_button_up"),
+                base.callable("on_work_finish_button_up"),
                 0,
             );
 
@@ -216,13 +215,13 @@ impl PanelVirtual for RollView {
             self.roll_again_button = GdHolder::from_path(base, "WorkFinishedSubview/RollAgainButton");
             self.roll_again_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_roll_again_button_up"),
+                base.callable("on_roll_again_button_up"),
                 0,
             );
             self.close_button = GdHolder::from_path(base, "WorkFinishedSubview/CloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
-                Callable::from_object_method(self.base.share(), "on_close_button_up"),
+                base.callable("on_close_button_up"),
                 0,
             );
         }: ArreResult<()> {

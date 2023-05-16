@@ -1,11 +1,10 @@
-use godot::builtin::{Callable};
 use godot::engine::{Button, DisplayServer, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
 use godot::prelude::*;
-use crate::errors::ArreError;
+use crate::errors::ArreResult;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
-use crate::godot_classes::utils::get_singleton;
+use crate::godot_classes::utils::{GdHolder, get_singleton};
 
 #[derive(GodotClass)]
 #[class(base=HBoxContainer)]
@@ -14,9 +13,9 @@ pub struct TabViewSelector {
     base: Base<HBoxContainer>,
 
     // cached UI elements
-    items_view_button: Option<Gd<Button>>,
-    lists_view_button: Option<Gd<Button>>,
-    tags_view_button: Option<Gd<Button>>,
+    items_view_button: GdHolder<Button>,
+    lists_view_button: GdHolder<Button>,
+    tags_view_button: GdHolder<Button>,
 
 }
 
@@ -45,49 +44,40 @@ impl HBoxContainerVirtual for TabViewSelector {
         Self {
             base,
 
-            items_view_button: None,
-            lists_view_button: None,
-            tags_view_button: None,
+            items_view_button: GdHolder::default(),
+            lists_view_button: GdHolder::default(),
+            tags_view_button: GdHolder::default(),
         }
     }
     fn ready(&mut self) {
-        // TODO: Find a better place for global config
-        DisplayServer::singleton().window_set_min_size(Vector2i::new(1024, 768), 0);
+        match try {
+            // TODO: Find a better place for global config
+            DisplayServer::singleton().window_set_min_size(Vector2i::new(1024, 768), 0);
 
-        self.add_theme_constant_override("separation".into(), 20);
+            self.add_theme_constant_override("separation".into(), 20);
 
-        self.items_view_button = self.base.try_get_node_as("ItemsViewButton");
-        self.items_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::ready::items_view_button".into())),
-            |button| {
-                button.connect(
-                    "button_up".into(),
-                    Callable::from_object_method(self.base.share(), "on_item_view_button_up"),
+            let base = &self.base;
+            self.items_view_button = GdHolder::from_path(base, "ItemsViewButton");
+            self.items_view_button.ok_mut()?.connect(
+                "button_up".into(),
+                base.callable("on_item_view_button_up"),
                 0,
-                );
-            }
-        );
-        self.lists_view_button = self.base.try_get_node_as("ListsViewButton");
-        self.lists_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::ready::lists_view_button".into())),
-            |button| {
-                button.connect(
-                    "button_up".into(),
-                    Callable::from_object_method(self.base.share(), "on_list_view_button_up"),
-                    0,
-                );
-            }
-        );
-        self.tags_view_button = self.base.try_get_node_as("TagsViewButton");
-        self.tags_view_button.as_mut().map_or_else(
-            || log_error(ArreError::NullGd("TabViewSelector::ready::tags_view_button".into())),
-            |button| {
-                button.connect(
-                    "button_up".into(),
-                    Callable::from_object_method(self.base.share(), "on_tag_view_button_up"),
-                    0,
-                );
-            }
-        );
+            );
+            self.lists_view_button = GdHolder::from_path(base, "ListsViewButton");
+            self.lists_view_button.ok_mut()?.connect(
+                "button_up".into(),
+                base.callable("on_list_view_button_up"),
+                0,
+            );
+            self.tags_view_button = GdHolder::from_path(base, "TagsViewButton");
+            self.tags_view_button.ok_mut()?.connect(
+                "button_up".into(),
+                base.callable("on_tag_view_button_up"),
+                0,
+            );
+        }: ArreResult<()> {
+            Ok(_) => {}
+            Err(err) => { log_error(err);}
+        }
     }
 }

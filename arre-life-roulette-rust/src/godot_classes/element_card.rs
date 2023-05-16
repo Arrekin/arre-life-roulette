@@ -124,7 +124,7 @@ impl MarginContainerVirtual for ElementCard {
             self.button = GdHolder::from_path(base, "Button");
             self.button.ok_mut()?.connect(
                 "gui_input".into(),
-                Callable::from_object_method(base.share(), "on_gui_input"),
+                base.callable("on_gui_input"),
                 0,
             );
             self.name_label = GdHolder::from_path(base, "MarginContainer/VBoxContainer/NameLabel");
