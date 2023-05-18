@@ -14,6 +14,17 @@ pub enum Content {
     List(List),
 }
 
+impl From<Item> for Content {
+    fn from(value: Item) -> Self {
+        Content::Item(value)
+    }
+}
+impl From<List> for Content {
+    fn from(value: List) -> Self {
+        Content::List(value)
+    }
+}
+
 pub trait OnClickBehavior {
     fn on_click(&mut self, content: &Content);
 }
@@ -83,13 +94,8 @@ impl ElementCard {
         }
     }
 
-    pub fn set_item(&mut self, item: Item) {
-        self.content = Content::Item(item);
-        self.refresh_display();
-    }
-
-    pub fn set_list(&mut self, list: List) {
-        self.content = Content::List(list);
+    pub fn set_content(&mut self, content: impl Into<Content>) {
+        self.content = content.into();
         self.refresh_display();
     }
 }

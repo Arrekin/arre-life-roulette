@@ -17,6 +17,21 @@ enum Mode {
     Edit,
 }
 
+struct DeferredActions {
+    refresh_display: bool,
+    save_name: bool,
+    save_description: bool,
+}
+impl Default for DeferredActions {
+    fn default() -> Self {
+        Self {
+            refresh_display: false,
+            save_name: false,
+            save_description: false,
+        }
+    }
+}
+
 /// View allowing List modifications
 /// items_in: Items in the list
 /// items_out: Items not on the list
@@ -42,7 +57,7 @@ pub struct ListModifyView {
     mode: Mode,
 
     // internal
-    needs_deferred_display_update: bool,
+    deferred_actions: DeferredActions,
 }
 
 #[godot_api]
@@ -128,6 +143,16 @@ impl ListModifyView {
         self.emit_signal("dialog_closed".into(), &[]);
     }
 
+    #[func]
+    fn on_name_line_edit_text_set(&mut self) {
+        self.deferred_actions.save_name = true;
+    }
+
+    #[func]
+    fn on_description_text_edit_text_set(&mut self) {
+        self.deferred_actions.save_description = true;
+    }
+
     pub fn set_mode_add(&mut self) {
         self.mode = Mode::Add;
         self.list = List::default();
@@ -179,7 +204,7 @@ impl PanelVirtual for ListModifyView {
             items_out: vec![],
             mode: Mode::Add,
 
-            needs_deferred_display_update: false
+            deferred_actions: DeferredActions::default(),
         }
     }
     fn ready(&mut self) {
@@ -187,7 +212,17 @@ impl PanelVirtual for ListModifyView {
             let base = &self.base;
             self.title_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/TitleLabel");
             self.name_line_edit = GdHolder::from_path(base, "VBoxContainer/ListNameLineEdit");
+            self.name_line_edit.ok_mut()?.connect(
+                "text_changed".into(),
+                base.callable("on_name_line_edit_text_set"),
+                0,
+            );
             self.description_text_edit = GdHolder::from_path(base, "VBoxContainer/ListDescriptionTextEdit");
+            self.description_text_edit.ok_mut()?.connect(
+                "text_changed".into(),
+                base.callable("on_description_text_edit_text_set"),
+                0,
+            );
             self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerIn/CardsInContainer");
             self.cards_out_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerOut/CardsOutContainer");
             self.apply_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/ListApplyButton");
@@ -210,9 +245,20 @@ impl PanelVirtual for ListModifyView {
     }
 
     fn process(&mut self, _delta: f64) {
-        if self.needs_deferred_display_update {
-            self.needs_deferred_display_update = false;
-            self.refresh_display();
+        match try {
+            if self.deferred_actions.save_name {
+                self.list.name = self.name_line_edit.ok()?.get_text().to_string();
+            }
+            if self.deferred_actions.save_description {
+                self.list.description = self.description_text_edit.ok()?.get_text().to_string();
+            }
+            if self.deferred_actions.refresh_display {
+                self.refresh_display();
+            }
+            self.deferred_actions = DeferredActions::default();
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
         }
     }
 }
@@ -242,7 +288,7 @@ impl OnClickBehavior for OnClickBehaviorSwitchItemsInOut {
                     parent.items_in.push(item.clone());
                 }
             }
-            parent.needs_deferred_display_update = true;
+            parent.deferred_actions.refresh_display = true;
         }
     }
 }

@@ -15,4 +15,3 @@ thiserror = "1.0.40"
 
 [dev-dependencies]
 rstest = "0.17.0"
-serial_test = "2.0.0"

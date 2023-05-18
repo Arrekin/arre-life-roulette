@@ -120,7 +120,7 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ListsListHFlowContainer" type="HFlowContainer" parent="UI/MainView/ListsView/VBoxContainer/ListsListScrollContainer"]
+[node name="CardsFlowContainer" type="CardsFlowContainer" parent="UI/MainView/ListsView/VBoxContainer/ListsListScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2

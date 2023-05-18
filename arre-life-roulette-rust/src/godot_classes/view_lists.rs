@@ -3,6 +3,7 @@ use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
+use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB};
 use crate::godot_classes::element_card::{Content, OnClickBehavior, ElementCard};
@@ -22,12 +23,13 @@ pub struct ListsView {
     // cached sub-scenes
     elemental_card_prefab: Gd<PackedScene>,
 
-    // cached UI elements
-    list_add_button: GdHolder<Button>,
-    list_roll_view: GdHolder<RollView>,
-    list_modify_view: GdHolder<ListModifyView>,
-    lists_grid: GdHolder<HFlowContainer>,
-    lists_grid_elements: Vec<Gd<ElementCard>>,
+    // cached internal UI elements
+    pub list_add_button: GdHolder<Button>,
+    pub cards_container: GdHolder<CardsFlowContainer>,
+
+    // cached external UI elements
+    pub list_roll_view: GdHolder<RollView>,
+    pub list_modify_view: GdHolder<ListModifyView>,
 
     // state
     lists: Vec<List>,
@@ -49,45 +51,43 @@ impl ListsView {
 
     #[func]
     fn on_view_selected(&mut self) {
-        self.refresh_lists_list();
+        self.refresh_full();
         self.show();
     }
 
     #[func]
-    fn refresh_lists_list(&mut self) {
+    fn refresh_full(&mut self) {
+        self.refresh_state();
+        self.refresh_display();
+    }
+
+    #[func]
+    fn refresh_state(&mut self) {
         match try {
-            let self_reference = self.base.share().cast::<Self>();
-            // Get current list of all lists from the DB
             let globals = get_singleton::<Globals>("Globals");
             let connection = &globals.bind().connection;
             self.lists = list_get_all(connection)?;
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
+        }
+    }
 
-            // Clear old and create a button for each item
-            self.lists_grid_elements.drain(..).for_each(|mut list_btn| list_btn.bind_mut().queue_free());
-            let new_lists = self.lists.iter().map(|list| {
-                    let instance = self.elemental_card_prefab
-                        .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
-                        .ok_or(ArreError::InstantiateFailed(
-                            ELEMENT_CARD_PREFAB.into(),
-                            "ListsView::refresh_lists_list".into()
-                        ))?;
-                    self.lists_grid.ok_mut()?.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
-                    let mut button = instance.try_cast::<ElementCard>()
-                        .ok_or(ArreError::CastFailed("ElementCard".into(), "ListView::refresh_lists_list".into()))?;
-                    {
-                        let mut button = button.bind_mut();
-                        button.set_list(list.clone());
-                        button.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListRollView {
-                            parent: self_reference.share(),
-                        }));
-                        button.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView {
-                            parent: self_reference.share(),
-                        }));
-                    }
-                    Ok(button)
+    #[func]
+    fn refresh_display(&mut self) {
+        match try {
+            let self_reference = self.base.share().cast::<Self>();
+            self.cards_container.ok_mut()?.bind_mut().set_cards(
+                self.lists.clone(),
+                |mut card| {
+                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListRollView {
+                        parent: self_reference.share(),
+                    }));
+                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView {
+                        parent: self_reference.share(),
+                    }));
                 }
-            ).collect::<ArreResult<Vec<_>>>()?;
-            self.lists_grid_elements.extend(new_lists);
+            );
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
@@ -102,11 +102,13 @@ impl ControlVirtual for ListsView {
             base,
             elemental_card_prefab: load(ELEMENT_CARD_PREFAB),
 
+            // cached internal UI elements
             list_add_button: GdHolder::default(),
+            cards_container: GdHolder::default(),
+
+            // cached external UI elements
             list_roll_view: GdHolder::default(),
             list_modify_view: GdHolder::default(),
-            lists_grid: GdHolder::default(),
-            lists_grid_elements: vec![],
 
             lists: vec![],
         }
@@ -123,16 +125,16 @@ impl ControlVirtual for ListsView {
             self.list_roll_view = GdHolder::from_path(base, "../../RollView");
             self.list_roll_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                base.callable("refresh_lists_list"),
+                base.callable("refresh_full"),
                 0,
             );
             self.list_modify_view = GdHolder::from_path(base, "../../ListModifyView");
             self.list_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
-                base.callable("refresh_lists_list"),
+                base.callable("refresh_full"),
                 0,
             );
-            self.lists_grid = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/ListsListHFlowContainer");
+            self.cards_container = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/CardsFlowContainer");
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
@@ -155,7 +157,7 @@ impl ControlVirtual for ListsView {
                 );
 
                 if self.is_visible() {
-                    self.refresh_lists_list();
+                    self.refresh_full();
                 }
             }
         }: ArreResult<()> {
