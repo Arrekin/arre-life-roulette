@@ -44,6 +44,7 @@ impl NodeVirtual for Logger {
 
 pub fn log_error(error: impl Into<BoxedError>) {
     let error = error.into();
+    utilities::push_error("Rust Error".to_variant(), &[error.to_string().to_variant()]);
     let mut logger = get_singleton::<Logger>("Logger");
     logger.bind_mut().error(error);
 }

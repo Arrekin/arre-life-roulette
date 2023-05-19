@@ -1,5 +1,4 @@
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
-use godot::engine::utilities::push_error;
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
@@ -182,7 +181,6 @@ impl ControlVirtual for ItemsView {
         }: ArreResult<()> {
             Ok(_) => {}
             Err(e) => {
-                push_error("ItemsView::ready: ".to_variant(), &[e.to_string().to_variant()]);
                 log_error(e)
             },
         }
