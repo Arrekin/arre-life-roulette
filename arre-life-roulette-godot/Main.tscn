@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=6 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 
@@ -15,6 +15,28 @@ func _input(event):
 
 [sub_resource type="LabelSettings" id="LabelSettings_20myd"]
 font_size = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spjtb"]
+bg_color = Color(0.192157, 0.196078, 0.262745, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
+bg_color = Color(0.117647, 0.262745, 0.262745, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
 
 [node name="Root" type="Node2D"]
 
@@ -419,44 +441,57 @@ label_settings = SubResource("LabelSettings_20myd")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView/VBoxContainer"]
+[node name="TextMarginContainer" type="MarginContainer" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 100
+theme_override_constants/margin_right = 100
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ListModifyView/VBoxContainer/TextMarginContainer"]
+layout_mode = 2
+
+[node name="ListNameLineEdit" type="LineEdit" parent="UI/ListModifyView/VBoxContainer/TextMarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(800, 0)
 layout_mode = 2
-size_flags_horizontal = 4
 placeholder_text = "List Name"
 
-[node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView/VBoxContainer"]
-custom_minimum_size = Vector2(800, 200)
+[node name="ListDescriptionTextEdit" type="TextEdit" parent="UI/ListModifyView/VBoxContainer/TextMarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(800, 120)
 layout_mode = 2
-size_flags_horizontal = 4
 placeholder_text = "List Description"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/ListModifyView/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="HSeparator" type="HSeparator" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="UI/ListModifyView/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ScrollContainerIn" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="HSplitContainer" type="HSplitContainer" parent="UI/ListModifyView/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/autohide = 0
+split_offset = 512
+
+[node name="PanelContainerOut" type="PanelContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_spjtb")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer/PanelContainerOut"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardsInContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ScrollContainerIn"]
+[node name="CardsOutContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer/PanelContainerOut/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2
 alignment = 1
 
-[node name="HSeparator2" type="HSeparator" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="PanelContainerIn" type="PanelContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer"]
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_fqtck")
 
-[node name="ScrollContainerOut" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer/PanelContainerIn"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardsOutContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/VBoxContainer/ScrollContainerOut"]
+[node name="CardsInContainer" type="CardsFlowContainer" parent="UI/ListModifyView/VBoxContainer/HSplitContainer/PanelContainerIn/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 2
@@ -468,12 +503,12 @@ layout_mode = 2
 [node name="BottomMarginContainer" type="MarginContainer" parent="UI/ListModifyView/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 8
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_bottom = 15
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_bottom = 10
 
 [node name="ListApplyButton" type="Button" parent="UI/ListModifyView/VBoxContainer/BottomMarginContainer"]
 self_modulate = Color(0, 1, 0.0588235, 1)
-custom_minimum_size = Vector2(400, 50)
+custom_minimum_size = Vector2(350, 40)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Add List"

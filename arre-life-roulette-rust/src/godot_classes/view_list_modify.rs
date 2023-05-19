@@ -211,20 +211,20 @@ impl PanelVirtual for ListModifyView {
         match try {
             let base = &self.base;
             self.title_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/TitleLabel");
-            self.name_line_edit = GdHolder::from_path(base, "VBoxContainer/ListNameLineEdit");
+            self.name_line_edit = GdHolder::from_path(base, "VBoxContainer/TextMarginContainer/VBoxContainer/ListNameLineEdit");
             self.name_line_edit.ok_mut()?.connect(
                 "text_changed".into(),
                 base.callable("on_name_line_edit_text_set"),
                 0,
             );
-            self.description_text_edit = GdHolder::from_path(base, "VBoxContainer/ListDescriptionTextEdit");
+            self.description_text_edit = GdHolder::from_path(base, "VBoxContainer/TextMarginContainer/VBoxContainer/ListDescriptionTextEdit");
             self.description_text_edit.ok_mut()?.connect(
                 "text_changed".into(),
                 base.callable("on_description_text_edit_text_set"),
                 0,
             );
-            self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerIn/CardsInContainer");
-            self.cards_out_container = GdHolder::from_path(base, "VBoxContainer/VBoxContainer/ScrollContainerOut/CardsOutContainer");
+            self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerIn/ScrollContainer/CardsInContainer");
+            self.cards_out_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerOut/ScrollContainer/CardsOutContainer");
             self.apply_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/ListApplyButton");
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
