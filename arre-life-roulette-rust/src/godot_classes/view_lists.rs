@@ -1,12 +1,9 @@
-use godot::engine::{Control, ControlVirtual, Button, HFlowContainer};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
+use godot::engine::{Control, ControlVirtual, Button};
 use godot::prelude::*;
-use crate::errors::{ArreError, ArreResult};
+use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::resources::{ELEMENT_CARD_PREFAB};
-use crate::godot_classes::element_card::{Content, OnClickBehavior, ElementCard};
+use crate::godot_classes::element_card::{Content, OnClickBehavior};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -19,9 +16,6 @@ use crate::list::{List, list_get_all};
 pub struct ListsView {
     #[base]
     base: Base<Control>,
-
-    // cached sub-scenes
-    elemental_card_prefab: Gd<PackedScene>,
 
     // cached internal UI elements
     pub list_add_button: GdHolder<Button>,
@@ -100,7 +94,6 @@ impl ControlVirtual for ListsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
-            elemental_card_prefab: load(ELEMENT_CARD_PREFAB),
 
             // cached internal UI elements
             list_add_button: GdHolder::default(),

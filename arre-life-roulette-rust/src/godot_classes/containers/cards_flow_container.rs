@@ -6,7 +6,6 @@ use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::resources::ELEMENT_CARD_PREFAB;
 use crate::godot_classes::singletons::logger::log_error;
-use crate::item::Item;
 
 #[derive(GodotClass)]
 #[class(base=FlowContainer)]
