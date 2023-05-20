@@ -1,17 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
-
-[sub_resource type="GDScript" id="GDScript_jaus0"]
-script/source = "extends LineEdit
-
-
-func _input(event):
-    if (event is InputEventMouseButton) and event.pressed:
-        var evLocal = make_input_local(event)
-        if !Rect2(Vector2(0,0), self.size).has_point(evLocal.position):
-            self.release_focus()
-"
+[ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_20myd"]
 font_size = 30
@@ -92,15 +82,8 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="SearchBarLineEdit" type="LineEdit" parent="UI/MainView/ItemsView/VBoxContainer"]
-custom_minimum_size = Vector2(500, 0)
+[node name="SearchBarLineEdit" parent="UI/MainView/ItemsView/VBoxContainer" instance=ExtResource("2_2yjra")]
 layout_mode = 2
-size_flags_horizontal = 4
-placeholder_text = "🔍 Search"
-clear_button_enabled = true
-select_all_on_focus = true
-caret_blink = true
-script = SubResource("GDScript_jaus0")
 
 [node name="ItemsListScrollContainer" type="ScrollContainer" parent="UI/MainView/ItemsView/VBoxContainer"]
 layout_mode = 2
@@ -458,6 +441,9 @@ placeholder_text = "List Name"
 custom_minimum_size = Vector2(800, 120)
 layout_mode = 2
 placeholder_text = "List Description"
+
+[node name="SearchBarLineEdit" parent="UI/ListModifyView/VBoxContainer" instance=ExtResource("2_2yjra")]
+layout_mode = 2
 
 [node name="HSeparator" type="HSeparator" parent="UI/ListModifyView/VBoxContainer"]
 layout_mode = 2

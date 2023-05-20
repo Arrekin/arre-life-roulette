@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://080x07ut6n1c"]
+
+[sub_resource type="GDScript" id="GDScript_jaus0"]
+script/source = "extends LineEdit
+
+
+func _input(event):
+    if (event is InputEventMouseButton) and event.pressed:
+        var evLocal = make_input_local(event)
+        if !Rect2(Vector2(0,0), self.size).has_point(evLocal.position):
+            self.release_focus()
+"
+
+[node name="SearchBarLineEdit" type="LineEdit"]
+custom_minimum_size = Vector2(500, 0)
+size_flags_horizontal = 4
+placeholder_text = "🔍 Search"
+clear_button_enabled = true
+select_all_on_focus = true
+caret_blink = true
+script = SubResource("GDScript_jaus0")

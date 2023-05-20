@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
@@ -6,7 +7,7 @@ use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::element_card::{OnClickBehavior, Content};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
-use crate::item::{Item, item_get_all, items_to_ids};
+use crate::item::{Item, item_get_all, item_search, items_to_ids};
 use crate::list::{List, list_create, list_items_get, list_items_get_complement, list_items_update, list_update};
 
 const UI_TEXT_CREATE: &str = "Create List";
@@ -41,10 +42,11 @@ pub struct ListModifyView {
     #[base]
     base: Base<Panel>,
 
-    // cached elements
+    // cached internal UI elements
     title_label: GdHolder<Label>,
     name_line_edit: GdHolder<LineEdit>,
     description_text_edit: GdHolder<TextEdit>,
+    searchbar: GdHolder<LineEdit>,
     cards_in_container: GdHolder<CardsFlowContainer>,
     cards_out_container: GdHolder<CardsFlowContainer>,
     apply_button: GdHolder<Button>,
@@ -52,9 +54,10 @@ pub struct ListModifyView {
 
     // state
     list: List,
-    items_in: Vec<Item>,
-    items_out: Vec<Item>,
+    items_in: HashSet<Item>,
+    items_out: HashSet<Item>,
     mode: Mode,
+    search_term: Option<String>,
 
     // internal
     deferred_actions: DeferredActions,
@@ -77,7 +80,7 @@ impl ListModifyView {
             match self.mode {
                 Mode::Add => {
                     let new_list = list_create(connection, new_name, new_description)?;
-                    let items = items_to_ids::<Vec<_>>(&self.items_in)?;
+                    let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
                     list_items_update(connection, new_list.get_id()?, items)?;
                     self.set_mode_edit(new_list);
                 }
@@ -85,7 +88,7 @@ impl ListModifyView {
                     self.list.name = new_name;
                     self.list.description = new_description;
                     list_update(connection, &self.list)?;
-                    let items = items_to_ids::<Vec<_>>(&self.items_in)?;
+                    let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
                     list_items_update(connection, self.list.get_id()?, items)?;
                 }
             }
@@ -113,8 +116,9 @@ impl ListModifyView {
             }
 
             let self_reference = self.base.share().cast::<Self>();
+            let display_items_in = self.get_display_items_in()?;
             self.cards_in_container.ok_mut()?.bind_mut().set_cards(
-                self.items_in.clone(),
+                display_items_in,
                 |mut card| {
                     card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
                         parent: self_reference.share(),
@@ -122,8 +126,9 @@ impl ListModifyView {
                     }));
                 }
             );
+            let display_items_out = self.get_display_items_out()?;
             self.cards_out_container.ok_mut()?.bind_mut().set_cards(
-                self.items_out.clone(),
+                display_items_out,
                 |mut card| {
                     card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
                         parent: self_reference.share(),
@@ -153,6 +158,18 @@ impl ListModifyView {
         self.deferred_actions.save_description = true;
     }
 
+    #[func]
+    fn on_search_request(&mut self) {
+        match try {
+            let search_term = self.searchbar.ok()?.get_text().to_string();
+            self.search_term = if search_term.is_empty() { None } else { Some(search_term) };
+            self.deferred_actions.refresh_display = true;
+        }: ArreResult<()> {
+            Ok(_) => {}
+            Err(err) => { log_error(err);}
+        }
+    }
+
     pub fn set_mode_add(&mut self) {
         self.mode = Mode::Add;
         self.list = List::default();
@@ -173,12 +190,42 @@ impl ListModifyView {
         match self.mode {
             Mode::Add => {
                 self.items_out = item_get_all(connection).unwrap();
-                self.items_in = vec![];
+                self.items_in = HashSet::new();
             },
             Mode::Edit => {
                 let list_id = self.list.get_id().unwrap();
                 self.items_out = list_items_get_complement(connection, list_id).unwrap();
                 self.items_in = list_items_get(connection, list_id).unwrap();
+            }
+        }
+    }
+
+    fn get_display_items_in(&self) -> ArreResult<Vec<Item>> {
+        let globals = get_singleton::<Globals>("Globals");
+        let connection = &globals.bind().connection;
+
+        match &self.search_term {
+            None => {
+                Ok(self.items_in.iter().cloned().collect())
+            }
+            Some(search_term) => {
+                let search_fitting_items = item_search(connection, search_term)?;
+                Ok(self.items_in.intersection(&search_fitting_items).cloned().collect())
+            }
+        }
+    }
+
+    fn get_display_items_out(&self) -> ArreResult<Vec<Item>> {
+        let globals = get_singleton::<Globals>("Globals");
+        let connection = &globals.bind().connection;
+
+        match &self.search_term {
+            None => {
+                Ok(self.items_out.iter().cloned().collect())
+            }
+            Some(search_term) => {
+                let search_fitting_items = item_search(connection, search_term)?;
+                Ok(self.items_out.intersection(&search_fitting_items).cloned().collect())
             }
         }
     }
@@ -191,19 +238,24 @@ impl PanelVirtual for ListModifyView {
         Self {
             base,
 
+            // cached internal UI elements
             title_label: GdHolder::default(),
             name_line_edit: GdHolder::default(),
             description_text_edit: GdHolder::default(),
+            searchbar: GdHolder::default(),
             cards_in_container: GdHolder::default(),
             cards_out_container: GdHolder::default(),
             apply_button: GdHolder::default(),
             close_button: GdHolder::default(),
 
+            // state
             list: List::default(),
-            items_in: vec![],
-            items_out: vec![],
+            items_in: HashSet::new(),
+            items_out: HashSet::new(),
             mode: Mode::Add,
+            search_term: None,
 
+            // internal
             deferred_actions: DeferredActions::default(),
         }
     }
@@ -221,6 +273,12 @@ impl PanelVirtual for ListModifyView {
             self.description_text_edit.ok_mut()?.connect(
                 "text_changed".into(),
                 base.callable("on_description_text_edit_text_set"),
+                0,
+            );
+            self.searchbar = GdHolder::from_path(base, "VBoxContainer/SearchBarLineEdit");
+            self.searchbar.ok_mut()?.connect(
+                "text_submitted".into(),
+                base.callable("on_search_request"),
                 0,
             );
             self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerIn/ScrollContainer/CardsInContainer");
@@ -280,12 +338,12 @@ impl OnClickBehavior for OnClickBehaviorSwitchItemsInOut {
             // // Depending whether the item is in or out, move it from one list to the other
             match self.in_or_out {
                 InOrOut::In => {
-                    parent.items_in.retain(|elem| elem != item);
-                    parent.items_out.push(item.clone());
+                    parent.items_in.remove(&item);
+                    parent.items_out.insert(item.clone());
                 },
                 InOrOut::Out => {
-                    parent.items_out.retain(|elem| elem != item);
-                    parent.items_in.push(item.clone());
+                    parent.items_out.remove(&item);
+                    parent.items_in.insert(item.clone());
                 }
             }
             parent.deferred_actions.refresh_display = true;

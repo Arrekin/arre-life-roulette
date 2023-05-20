@@ -116,10 +116,12 @@ pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
     Ok(())
 }
 
-pub fn items_to_ids<C>(items: &[Item]) -> ArreResult<C>
-where C: FromIterator<ItemId>
+pub fn items_to_ids<'a, I, O>(items: I) -> ArreResult<O>
+where
+    I: Iterator<Item = &'a Item>,
+    O: FromIterator<ItemId>,
 {
-    items.iter().map(|item| item.get_id()).collect::<ArreResult<C>>()
+    items.map(|item| item.get_id()).collect::<ArreResult<O>>()
 }
 
 pub type ItemId = Id<Item>;
