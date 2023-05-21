@@ -76,7 +76,7 @@ impl ItemsView {
                 Some(search_term) => {
                     self.items = item_search(connection, search_term)?;
                 },
-                None => { // Get list of all items from the DB
+                None => {
                     self.items = item_get_all(connection)?;
                 }
             }

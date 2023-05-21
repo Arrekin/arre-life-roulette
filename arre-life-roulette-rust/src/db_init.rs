@@ -12,16 +12,7 @@ pub fn initialize_database(conn: &Connection) -> Result<()> {
         )",
         (),
     )?;
-    conn.execute(
-        "CREATE TABLE lists (
-            list_id INTEGER PRIMARY KEY,
-            created_date TEXT NOT NULL,
-            updated_date TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT NULL
-        )",
-        (),
-    )?;
+    initialize_lists_table(conn)?;
     conn.execute(
         "CREATE TABLE item_list_map (
             list_id INTEGER,
@@ -66,6 +57,43 @@ fn initialize_items_table(conn: &Connection) -> Result<()> {
         END;
         CREATE TRIGGER after_items_delete AFTER DELETE ON items BEGIN
             DELETE FROM items_search_index WHERE rowid = old.item_id;
+        END;
+        "
+    )?;
+    Ok(())
+}
+
+pub fn initialize_lists_table(conn: &Connection) -> Result<()> {
+    conn.execute_batch("
+        CREATE TABLE lists (
+            list_id INTEGER PRIMARY KEY,
+            created_date TEXT NOT NULL,
+            updated_date TEXT NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT NULL
+        );
+        CREATE VIRTUAL TABLE lists_search_index USING fts5(name, description, tokenize=trigram);
+        CREATE TRIGGER after_list_insert AFTER INSERT ON lists BEGIN
+          INSERT INTO lists_search_index (
+            rowid,
+            name,
+            description
+          )
+          VALUES(
+            new.list_id,
+            new.name,
+            new.description
+          );
+        END;
+        CREATE TRIGGER after_lists_update AFTER UPDATE OF name, description ON lists BEGIN
+          UPDATE lists_search_index
+          SET
+            name = new.name,
+            description = new.description
+          WHERE rowid = old.list_id;
+        END;
+        CREATE TRIGGER after_lists_delete AFTER DELETE ON lists BEGIN
+            DELETE FROM lists_search_index WHERE rowid = old.list_id;
         END;
         "
     )?;

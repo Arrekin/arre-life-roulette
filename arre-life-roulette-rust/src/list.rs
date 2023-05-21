@@ -79,6 +79,30 @@ where C: FromIterator<List>
     results.collect::<Result<C>>()
 }
 
+pub fn list_search<C>(conn: &Connection, search_term: impl AsRef<str>) -> ArreResult<C>
+where C: FromIterator<List>
+{
+    let search_term = search_term.as_ref();
+    let mut stmt = conn.prepare("
+        SELECT
+         l.list_id, l.created_date, l.updated_date, l.name, l.description
+        FROM lists l
+        JOIN (
+            SELECT
+             rowid, rank
+            FROM
+             lists_search_index
+            WHERE
+                lists_search_index MATCH ?1
+        ) search ON l.list_id = search.rowid
+        ORDER BY search.rank DESC
+    ")?;
+    let result = stmt.query_map([search_term], |row| {
+        List::from_row(row)
+    })?.collect::<Result<C>>()?;
+    Ok(result)
+}
+
 pub fn list_delete(conn: &Connection, id: ListId) -> ArreResult<()> {
     conn.execute("DELETE FROM item_list_map WHERE list_id = ?1", (*id,))?;
     conn.execute("DELETE FROM lists WHERE list_id = ?1", (*id,))?;
@@ -224,7 +248,7 @@ impl Default for List {
 mod tests {
     use rstest::*;
     use rusqlite::Connection;
-    use crate::item::items_to_ids;
+    use crate::item::{items_to_ids, item_create};
     use crate::test_fixtures::{conn, TestFactory};
     use super::*;
 
@@ -266,7 +290,7 @@ mod tests {
         tf.assert_items_number(5)?;
         list_items_add(
             &conn, list_id,
-            items_to_ids::<Vec<_>>(&start_items)?,
+            items_to_ids::<_, Vec<_>>(start_items.iter())?,
         )?;
         tf.assert_items_number_in_list(list_id, 5);
         list_items_delete(&conn, list_id, std::iter::once(first_item_id))?;
@@ -296,7 +320,7 @@ mod tests {
         tf.assert_items_number_in_list(list_id, 0);
         list_items_update(
             &conn, list_id,
-            items_to_ids::<Vec<_>>(&list_items)?
+            items_to_ids::<_, Vec<_>>(list_items.iter())?
         )?;
         tf.assert_items_number_in_list(list_id, 3);
 
@@ -305,8 +329,65 @@ mod tests {
         list_items.pop();
         list_items.pop();
         list_items.extend(tf.create_items(3)?);
-        list_items_update(&conn, list_id, items_to_ids::<Vec<_>>(&list_items)?)?;
+        list_items_update(&conn, list_id, items_to_ids::<_, Vec<_>>(list_items.iter())?)?;
         tf.assert_items_number_in_list(list_id, 4);
+        Ok(())
+    }
+
+
+    #[rstest]
+    #[case("Zero", 0)]
+    #[case("onE", 1)]
+    #[case("TwO", 2)]
+    #[case("three", 3)]
+    fn list_search_successful(
+        conn: Connection,
+        #[case] search_term: String,
+        #[case] expected_number_of_lists: usize
+    ) -> ArreResult<()> {
+        list_create(&conn, "One", "Not number three at all")?;
+        list_create(&conn, "Not ThRee", "but it's number TWO!")?;
+        list_create(&conn, "Finally Three :o", "Not two, it means :(")?;
+        let items = list_search::<Vec<_>>(&conn, search_term)?;
+        assert_eq!(items.len(), expected_number_of_lists);
+        Ok(())
+    }
+
+    #[rstest]
+    fn list_search_after_update(conn: Connection) -> ArreResult<()> {
+        // Create a single item and make sure it does not appear in list search results
+        item_create(&conn, "Glorious Item", "Beyond Comprehension")?;
+        // Create a list with similar name and description
+        let mut list = list_create(&conn, "Glorious List", "Beyond Comprehension")?;
+
+        let search_result = list_search::<Vec<_>>(&conn, "Glorious")?;
+        assert_eq!(search_result.len(), 1, "Expected 1 search result, got {:?}", search_result);
+        assert_eq!(&search_result[0].name as &str, "Glorious List");
+
+        list.name = "Heavenly List".into();
+        list_update(&conn, &list)?;
+        assert_eq!(list_search::<Vec<_>>(&conn, "Glorious")?.len(), 0);
+        assert_eq!(&list_search::<Vec<_>>(&conn, "Heavenly")?[0].name as &str, "Heavenly List");
+        Ok(())
+    }
+
+    #[rstest]
+    fn list_search_index_purge_after_delete(conn: Connection) -> ArreResult<()> {
+        let count_fn = |conn: &Connection| -> Result<i64> {
+            conn.query_row_and_then(
+                "SELECT count(*) FROM lists_search_index;",
+                (),
+                |row| {
+                    row.get(0)
+                }
+            )
+        };
+        let mut tf = TestFactory::new(&conn);
+        assert_eq!(count_fn(&conn)?, 0);
+        let lists = tf.create_lists(10)?;
+        assert_eq!(count_fn(&conn)?, 10);
+        lists.into_iter().for_each(|list| list_delete(&conn, list.get_id().unwrap()).unwrap());
+        assert_eq!(count_fn(&conn)?, 0);
         Ok(())
     }
 

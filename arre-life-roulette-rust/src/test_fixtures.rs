@@ -4,7 +4,7 @@ use rstest::*;
 use crate::db_init::initialize_database;
 use crate::item::{Item, item_create, ItemId};
 use crate::item_tag::{ItemTagId};
-use crate::list::ListId;
+use crate::list::{List, list_create, ListId};
 use crate::errors::ArreResult;
 
 #[fixture]
@@ -50,6 +50,19 @@ impl TestFactory<'_> {
             self.created_items.push(item.get_id()?);
             self.items_count += 1;
             Ok(item)
+        }).collect::<ArreResult<Vec<_>>>().into()
+    }
+
+    pub fn create_lists(&mut self, lists_nb: usize) -> ArreResult<Vec<List>> {
+        (0..lists_nb).map(|_| {
+            let list = list_create(
+                self.connection,
+                format!("List #{}", self.lists_count),
+                format!("List #{} description", self.lists_count),
+            )?;
+            self.created_lists.push(list.get_id()?);
+            self.lists_count += 1;
+            Ok(list)
         }).collect::<ArreResult<Vec<_>>>().into()
     }
 

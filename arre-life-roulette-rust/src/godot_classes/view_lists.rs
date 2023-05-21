@@ -1,4 +1,4 @@
-use godot::engine::{Control, ControlVirtual, Button};
+use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
@@ -9,7 +9,7 @@ use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::godot_classes::view_list_modify::ListModifyView;
 use crate::godot_classes::view_roll::RollView;
-use crate::list::{List, list_get_all};
+use crate::list::{List, list_get_all, list_search};
 
 #[derive(GodotClass)]
 #[class(base=Control)]
@@ -20,6 +20,7 @@ pub struct ListsView {
     // cached internal UI elements
     pub list_add_button: GdHolder<Button>,
     pub cards_container: GdHolder<CardsFlowContainer>,
+    pub searchbar: GdHolder<LineEdit>,
 
     // cached external UI elements
     pub list_roll_view: GdHolder<RollView>,
@@ -27,6 +28,7 @@ pub struct ListsView {
 
     // state
     lists: Vec<List>,
+    search_term: Option<String>,
 }
 
 #[godot_api]
@@ -50,6 +52,13 @@ impl ListsView {
     }
 
     #[func]
+    fn on_search_request(&mut self, search_term: GodotString) {
+        let search_term = search_term.to_string();
+        self.search_term = if search_term.is_empty() { None } else { Some(search_term) };
+        self.refresh_full();
+    }
+
+    #[func]
     fn refresh_full(&mut self) {
         self.refresh_state();
         self.refresh_display();
@@ -60,7 +69,14 @@ impl ListsView {
         match try {
             let globals = get_singleton::<Globals>("Globals");
             let connection = &globals.bind().connection;
-            self.lists = list_get_all(connection)?;
+            match &self.search_term {
+                Some(search_term) => {
+                    self.lists = list_search(connection, search_term)?;
+                },
+                None => {
+                    self.lists = list_get_all(connection)?;
+                }
+            }
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
@@ -98,12 +114,14 @@ impl ControlVirtual for ListsView {
             // cached internal UI elements
             list_add_button: GdHolder::default(),
             cards_container: GdHolder::default(),
+            searchbar: GdHolder::default(),
 
             // cached external UI elements
             list_roll_view: GdHolder::default(),
             list_modify_view: GdHolder::default(),
 
             lists: vec![],
+            search_term: None,
         }
     }
     fn ready(&mut self) {
@@ -115,6 +133,14 @@ impl ControlVirtual for ListsView {
                 base.callable("on_list_add_button_up"),
                 0,
             );
+            self.cards_container = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/CardsFlowContainer");
+            self.searchbar = GdHolder::from_path(base, "VBoxContainer/SearchBarLineEdit");
+            self.searchbar.ok_mut()?.connect(
+                "text_submitted".into(),
+                base.callable("on_search_request"),
+                0,
+            );
+
             self.list_roll_view = GdHolder::from_path(base, "../../RollView");
             self.list_roll_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
@@ -127,7 +153,6 @@ impl ControlVirtual for ListsView {
                 base.callable("refresh_full"),
                 0,
             );
-            self.cards_container = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/CardsFlowContainer");
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
