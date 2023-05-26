@@ -2,46 +2,43 @@ use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
-use crate::godot_classes::element_card::{OnClickBehavior, Content};
 use crate::godot_classes::singletons::globals::{Globals};
+use crate::godot_classes::element_card::{Content, OnClickBehavior};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
-use crate::godot_classes::view_item_modify::ItemModifyView;
-use crate::godot_classes::view_item_stats::ItemStatsView;
-use crate::item::{Item, item_get_all, item_search};
-use crate::item_stats::item_stats_get;
+use crate::godot_classes::views::view_list_modify::ListModifyView;
+use crate::godot_classes::views::view_roll::RollView;
+use crate::list::{List, list_get_all, list_search};
 
 #[derive(GodotClass)]
 #[class(base=Control)]
-pub struct ItemsView {
+pub struct ListsView {
     #[base]
     base: Base<Control>,
 
     // cached internal UI elements
-    pub item_add_button: GdHolder<Button>,
+    pub list_add_button: GdHolder<Button>,
     pub cards_container: GdHolder<CardsFlowContainer>,
     pub searchbar: GdHolder<LineEdit>,
 
     // cached external UI elements
-    pub item_modify_view: GdHolder<ItemModifyView>,
-    pub item_stats_view: GdHolder<ItemStatsView>,
+    pub list_roll_view: GdHolder<RollView>,
+    pub list_modify_view: GdHolder<ListModifyView>,
 
     // state
-    items: Vec<Item>,
+    lists: Vec<List>,
     search_term: Option<String>,
 }
 
 #[godot_api]
-impl ItemsView {
+impl ListsView {
     #[func]
-    fn on_item_add_button_up(&mut self) {
+    fn on_list_add_button_up(&mut self) {
         match try {
-            self.item_modify_view.ok_mut().map(|view| {
-                let mut view = view.bind_mut();
-                view.set_mode_add();
-                view.show();
-            })?;
+            let mut view = self.list_modify_view.ok_mut()?.bind_mut();
+            view.set_mode_add();
+            view.set_visible(true);
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
@@ -74,10 +71,10 @@ impl ItemsView {
             let connection = &globals.bind().connection;
             match &self.search_term {
                 Some(search_term) => {
-                    self.items = item_search(connection, search_term)?;
+                    self.lists = list_search(connection, search_term)?;
                 },
                 None => {
-                    self.items = item_get_all(connection)?;
+                    self.lists = list_get_all(connection)?;
                 }
             }
         }: ArreResult<()> {
@@ -91,12 +88,12 @@ impl ItemsView {
         match try {
             let self_reference = self.base.share().cast::<Self>();
             self.cards_container.ok_mut()?.bind_mut().set_cards(
-                self.items.clone(),
+                self.lists.clone(),
                 |mut card| {
-                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowItemStatsView {
+                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListRollView {
                         parent: self_reference.share(),
                     }));
-                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView {
+                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView {
                         parent: self_reference.share(),
                     }));
                 }
@@ -109,50 +106,53 @@ impl ItemsView {
 }
 
 #[godot_api]
-impl ControlVirtual for ItemsView {
+impl ControlVirtual for ListsView {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
 
             // cached internal UI elements
-            item_add_button: GdHolder::default(),
+            list_add_button: GdHolder::default(),
             cards_container: GdHolder::default(),
             searchbar: GdHolder::default(),
 
             // cached external UI elements
-            item_modify_view: GdHolder::default(),
-            item_stats_view: GdHolder::default(),
+            list_roll_view: GdHolder::default(),
+            list_modify_view: GdHolder::default(),
 
-            // state
-            items: vec![],
+            lists: vec![],
             search_term: None,
         }
     }
     fn ready(&mut self) {
         match try {
             let base = &self.base;
-            self.item_add_button = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ItemAddDialogButton");
-            self.item_add_button.ok_mut()?.connect(
+            self.list_add_button = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ListAddDialogButton");
+            self.list_add_button.ok_mut()?.connect(
                 "button_up".into(),
-                base.callable("on_item_add_button_up"),
+                base.callable("on_list_add_button_up"),
                 0,
             );
-            self.cards_container = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/CardsFlowContainer");
-            self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
+            self.cards_container = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/CardsFlowContainer");
+            self.searchbar = GdHolder::from_path(base, "VBoxContainer/SearchBarLineEdit");
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
                 base.callable("on_search_request"),
                 0,
             );
 
-            self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
-            self.item_modify_view.ok_mut()?.bind_mut().connect(
+            self.list_roll_view = GdHolder::from_path(base, "../../RollView");
+            self.list_roll_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
                 base.callable("refresh_full"),
                 0,
             );
-            self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
-
+            self.list_modify_view = GdHolder::from_path(base, "../../ListModifyView");
+            self.list_modify_view.ok_mut()?.bind_mut().connect(
+                "dialog_closed".into(),
+                base.callable("refresh_full"),
+                0,
+            );
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");
@@ -160,12 +160,12 @@ impl ControlVirtual for ItemsView {
                 let mut signals = signals.bind_mut();
                 signals.connect(
                     "item_view_tab_selected".into(),
-                    base.callable("on_view_selected"),
+                    base.callable("hide"),
                     0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
-                    base.callable("hide"),
+                    base.callable("on_view_selected"),
                     0,
                 );
                 signals.connect(
@@ -173,57 +173,49 @@ impl ControlVirtual for ItemsView {
                     base.callable("hide"),
                     0,
                 );
-            }
 
-            if self.is_visible() {
-                self.refresh_full();
+                if self.is_visible() {
+                    self.refresh_full();
+                }
             }
         }: ArreResult<()> {
-            Ok(_) => {}
-            Err(e) => {
-                log_error(e)
-            },
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
         }
     }
 }
 
-struct OnClickBehaviorShowItemModifyView {
-    pub parent: Gd<ItemsView>,
+struct OnClickBehaviorShowListModifyView {
+    pub parent: Gd<ListsView>,
 }
 
-impl OnClickBehavior for OnClickBehaviorShowItemModifyView {
+impl OnClickBehavior for OnClickBehaviorShowListModifyView {
     fn on_click(&mut self, content: &Content) {
-        if let Content::Item(item) = content {
+        if let Content::List(list) = content {
             let mut parent = self.parent.bind_mut();
-            parent.item_modify_view.ok_mut().map(|view| {
+            parent.list_modify_view.ok_mut().map(|view| {
                 let mut view = view.bind_mut();
-                view.set_mode_edit(item.clone());
+                view.set_mode_edit(list.clone());
                 view.show();
             }).unwrap_or_else(|e| log_error(e));
         }
     }
 }
 
-struct OnClickBehaviorShowItemStatsView {
-    pub parent: Gd<ItemsView>,
+struct OnClickBehaviorShowListRollView {
+    pub parent: Gd<ListsView>,
 }
 
-impl OnClickBehavior for OnClickBehaviorShowItemStatsView {
+impl OnClickBehavior for OnClickBehaviorShowListRollView {
     fn on_click(&mut self, content: &Content) {
-        match try {
-            if let Content::Item(item) = content {
-                let globals = get_singleton::<Globals>("Globals");
-                let connection = &globals.bind().connection;
-
-                let mut parent = self.parent.bind_mut();
-                let mut view = parent.item_stats_view.ok_mut()?.bind_mut();
-                view.item_stats = item_stats_get(connection, item.get_id()?)?;
-                view.refresh_display();
+        if let Content::List(list) = content {
+            let mut parent = self.parent.bind_mut();
+            parent.list_roll_view.ok_mut().map(|view| {
+                let mut view = view.bind_mut();
+                view.set_list(list.clone()).unwrap_or_else(|e| log_error(e));
+                view.refresh_view();
                 view.show();
-            }
-        }: ArreResult<()> {
-            Ok(_) => {}
-            Err(e) => log_error(e),
+            }).unwrap_or_else(|e| log_error(e));
         }
     }
 }

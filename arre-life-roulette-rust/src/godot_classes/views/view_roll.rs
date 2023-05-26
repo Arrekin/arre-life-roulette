@@ -54,6 +54,9 @@ impl RollView {
     fn dialog_closed();
 
     pub fn set_list(&mut self, list: List) -> ArreResult<()> {
+        // Reset view
+        self.roll_state = RollState::AwaitingRoll;
+
         self.list = list;
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
@@ -67,24 +70,21 @@ impl RollView {
             self.list_name_label.ok_mut()?.set_text(self.list.name.clone().into());
             match self.roll_state {
                 RollState::AwaitingRoll => {
+                    self.hide_all_subviews()?;
                     self.awaiting_subview.ok_mut()?.set_visible(true);
-                    self.work_assigned_subview.ok_mut()?.set_visible(false);
-                    self.work_finished_subview.ok_mut()?.set_visible(false);
                 },
                 RollState::Rolling => {
                     // TODO
                 },
                 RollState::WorkAssigned => {
-                    self.awaiting_subview.ok_mut()?.set_visible(false);
+                    self.hide_all_subviews()?;
                     self.work_assigned_subview.ok_mut()?.set_visible(true);
-                    self.work_finished_subview.ok_mut()?.set_visible(false);
                     let work_item = &self.items[self.work_item];
                     self.item_name_label.ok_mut()?.set_text(work_item.name.clone().into());
                     self.item_description_label.ok_mut()?.set_text(work_item.description.clone().into());
                 },
                 RollState::WorkFinished => {
-                    self.awaiting_subview.ok_mut()?.set_visible(false);
-                    self.work_assigned_subview.ok_mut()?.set_visible(false);
+                    self.hide_all_subviews()?;
                     self.work_finished_subview.ok_mut()?.set_visible(true);
                 }
             }
@@ -92,6 +92,13 @@ impl RollView {
             Ok(_) => {}
             Err(e) => { log_error(e); }
         }
+    }
+
+    fn hide_all_subviews(&mut self) -> ArreResult<()> {
+        self.awaiting_subview.ok_mut()?.set_visible(false);
+        self.work_assigned_subview.ok_mut()?.set_visible(false);
+        self.work_finished_subview.ok_mut()?.set_visible(false);
+        Ok(())
     }
 
     #[func]

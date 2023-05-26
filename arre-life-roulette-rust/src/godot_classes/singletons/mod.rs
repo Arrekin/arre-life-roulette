@@ -1,3 +1,3 @@
 pub mod globals;
-pub mod signals;
 pub mod logger;
+pub mod signals;
