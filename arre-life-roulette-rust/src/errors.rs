@@ -14,9 +14,10 @@ pub enum ArreError {
     #[error("[color=red][b]`try_cast()`[/b] failed for [b]`{0}`[/b] at [b]`{1}`[/b][/color]")]
     CastFailed(String, String),
     // Logic errors
-    // List has no items error
     #[error("[color=red]List [b]`{0}`[/b] has no items[/color]")]
     ListHasNoItems(String),
+    #[error("[color=red]Owned bus cannot be cloned[/color]")]
+    OwnedBusCannotBeCloned(),
     // Core errors
     #[error("[color=red] Attempt to operate on non persisted item [/color]")]
     ItemNotPersisted(),

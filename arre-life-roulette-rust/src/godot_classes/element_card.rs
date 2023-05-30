@@ -2,8 +2,9 @@ use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginCo
 use godot::engine::global::MouseButton;
 use godot::prelude::*;
 use crate::errors::ArreResult;
+use crate::godot_classes::singletons::buses::{BusType};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::GdHolder;
+use crate::godot_classes::utils::{GdHolder};
 use crate::item::Item;
 use crate::list::List;
 
@@ -25,10 +26,6 @@ impl From<List> for Content {
     }
 }
 
-pub trait OnClickBehavior {
-    fn on_click(&mut self, content: &Content);
-}
-
 #[derive(GodotClass)]
 #[class(base=MarginContainer)]
 pub struct ElementCard {
@@ -40,9 +37,9 @@ pub struct ElementCard {
     pub name_label: GdHolder<Label>,
     pub description_label: GdHolder<Label>,
 
-    // components
-    pub on_left_click_behavior: Option<Box<dyn OnClickBehavior>>,
-    pub on_right_click_behavior: Option<Box<dyn OnClickBehavior>>,
+    // buses
+    pub bus_left_click: BusType<InstanceId>,
+    pub bus_right_click: BusType<InstanceId>,
 
     // state
     pub content: Content,
@@ -50,7 +47,6 @@ pub struct ElementCard {
 
 #[godot_api]
 impl ElementCard {
-
     #[func]
     fn refresh_display(&mut self) {
         match try {
@@ -68,26 +64,13 @@ impl ElementCard {
     }
 
     #[func]
-    fn on_left_button_up(&mut self) {
-        self.on_left_click_behavior.as_mut().map(|behavior| {
-            behavior.on_click(&self.content);
-        });
-    }
-
-    #[func]
-    fn on_right_button_up(&mut self) {
-        self.on_right_click_behavior.as_mut().map(|behavior| {
-            behavior.on_click(&self.content);
-        });
-    }
-
-    #[func]
     fn on_gui_input(&mut self, event: Gd<InputEvent>) {
         if let Some(event) = event.try_cast::<InputEventMouseButton>() {
             if event.is_pressed() {
+                let instance_id = self.base.instance_id();
                 match event.get_button_index() {
-                    MouseButton::MOUSE_BUTTON_LEFT => self.on_left_button_up(),
-                    MouseButton::MOUSE_BUTTON_RIGHT => self.on_right_button_up(),
+                    MouseButton::MOUSE_BUTTON_LEFT => self.bus_left_click.broadcast(instance_id),
+                    MouseButton::MOUSE_BUTTON_RIGHT => self.bus_right_click.broadcast(instance_id),
                     _ => {}
                 }
             }
@@ -111,10 +94,11 @@ impl MarginContainerVirtual for ElementCard {
             name_label: GdHolder::default(),
             description_label: GdHolder::default(),
 
-            // components
-            on_left_click_behavior: None,
-            on_right_click_behavior: None,
+            // buses
+            bus_left_click: BusType::None,
+            bus_right_click: BusType::None,
 
+            // state
             content: Content::Empty,
         }
     }

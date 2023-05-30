@@ -6,6 +6,7 @@ use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::views::roll::subview_selection::RollSelectionSubview;
 use crate::item::Item;
 use crate::item_stats::{item_stats_get, item_stats_update};
 use crate::list::{List, list_items_get};
@@ -27,8 +28,7 @@ pub struct RollView {
     work_cancel_button: GdHolder<Button>,
     list_name_label: GdHolder<Label>,
     // awaiting subview
-    awaiting_subview: GdHolder<Control>,
-    roll_start_button: GdHolder<Button>,
+    selection_subview: GdHolder<RollSelectionSubview>,
     // work assigned subview
     work_assigned_subview: GdHolder<Control>,
     item_name_label: GdHolder<Label>,
@@ -61,6 +61,9 @@ impl RollView {
         let globals = get_singleton::<Globals>("Globals");
         let connection = &globals.bind().connection;
         self.items = list_items_get(connection, self.list.get_id()?)?;
+
+        self.selection_subview.ok_mut()?.bind_mut().set_state(self.list.get_id()?);
+        self.selection_subview.ok_mut()?.bind_mut().refresh_display();
         Ok(())
     }
 
@@ -71,7 +74,7 @@ impl RollView {
             match self.roll_state {
                 RollState::AwaitingRoll => {
                     self.hide_all_subviews()?;
-                    self.awaiting_subview.ok_mut()?.set_visible(true);
+                    self.selection_subview.ok_mut()?.bind_mut().set_visible(true);
                 },
                 RollState::Rolling => {
                     // TODO
@@ -95,7 +98,7 @@ impl RollView {
     }
 
     fn hide_all_subviews(&mut self) -> ArreResult<()> {
-        self.awaiting_subview.ok_mut()?.set_visible(false);
+        self.selection_subview.ok_mut()?.bind_mut().set_visible(false);
         self.work_assigned_subview.ok_mut()?.set_visible(false);
         self.work_finished_subview.ok_mut()?.set_visible(false);
         Ok(())
@@ -166,8 +169,7 @@ impl PanelVirtual for RollView {
             work_cancel_button: GdHolder::default(),
             list_name_label: GdHolder::default(),
             // awaiting subview
-            awaiting_subview: GdHolder::default(),
-            roll_start_button: GdHolder::default(),
+            selection_subview: GdHolder::default(),
             // work assigned subview
             work_assigned_subview: GdHolder::default(),
             item_name_label: GdHolder::default(),
@@ -196,21 +198,15 @@ impl PanelVirtual for RollView {
                 base.callable("on_work_cancel_button_up"),
                 0,
             );
-            self.list_name_label = GdHolder::from_path(base, "ListNameLabel");
-            // awaiting subview
-            self.awaiting_subview = GdHolder::from_path(base, "AwaitingSubview");
-            self.roll_start_button = GdHolder::from_path(base, "AwaitingSubview/RollStartButton");
-            self.roll_start_button.ok_mut()?.connect(
-                "button_up".into(),
-                base.callable("on_roll_start_button_up"),
-                0,
-            );
+            self.list_name_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/ListNameLabel");
+            // selection subview
+            self.selection_subview = GdHolder::from_path(base, "VBoxContainer/SelectionSubview");
 
             // work assigned subview
-            self.work_assigned_subview = GdHolder::from_path(base, "WorkAssignedSubview");
-            self.item_name_label = GdHolder::from_path(base, "WorkAssignedSubview/ItemNameLabel");
-            self.item_description_label = GdHolder::from_path(base, "WorkAssignedSubview/ItemDescriptionLabel");
-            self.work_finish_button = GdHolder::from_path(base, "WorkAssignedSubview/WorkFinishButton");
+            self.work_assigned_subview = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview");
+            self.item_name_label = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/ItemNameLabel");
+            self.item_description_label = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/ItemDescriptionLabel");
+            self.work_finish_button = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/WorkFinishButton");
             self.work_finish_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_work_finish_button_up"),
@@ -218,14 +214,14 @@ impl PanelVirtual for RollView {
             );
 
             // work finished subview
-            self.work_finished_subview = GdHolder::from_path(base, "WorkFinishedSubview");
-            self.roll_again_button = GdHolder::from_path(base, "WorkFinishedSubview/RollAgainButton");
+            self.work_finished_subview = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview");
+            self.roll_again_button = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview/RollAgainButton");
             self.roll_again_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_roll_again_button_up"),
                 0,
             );
-            self.close_button = GdHolder::from_path(base, "WorkFinishedSubview/CloseButton");
+            self.close_button = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview/CloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_close_button_up"),

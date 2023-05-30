@@ -1,10 +1,11 @@
 use std::collections::HashSet;
+use bus::BusReader;
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::element_card::{OnClickBehavior, Content};
+use crate::godot_classes::element_card::{ElementCard, Content};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::item::{Item, item_get_all, item_search, items_to_ids};
@@ -51,6 +52,10 @@ pub struct ListModifyView {
     cards_out_container: GdHolder<CardsFlowContainer>,
     apply_button: GdHolder<Button>,
     close_button: GdHolder<Button>,
+
+    // observers
+    observer_card_in_left_click: Option<BusReader<InstanceId>>,
+    observer_card_out_left_click: Option<BusReader<InstanceId>>,
 
     // state
     list: List,
@@ -115,27 +120,10 @@ impl ListModifyView {
                 }
             }
 
-            let self_reference = self.base.share().cast::<Self>();
             let display_items_in = self.get_display_items_in()?;
-            self.cards_in_container.ok_mut()?.bind_mut().set_cards(
-                display_items_in,
-                |mut card| {
-                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
-                        parent: self_reference.share(),
-                        in_or_out: InOrOut::In
-                    }));
-                }
-            );
+            self.cards_in_container.ok_mut()?.bind_mut().set_cards(display_items_in);
             let display_items_out = self.get_display_items_out()?;
-            self.cards_out_container.ok_mut()?.bind_mut().set_cards(
-                display_items_out,
-                |mut card| {
-                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorSwitchItemsInOut {
-                        parent: self_reference.share(),
-                        in_or_out: InOrOut::Out
-                    }))
-                }
-            )
+            self.cards_out_container.ok_mut()?.bind_mut().set_cards(display_items_out)
         }: ArreResult<()> {
             Ok(_) => {}
             Err(err) => { log_error(err);}
@@ -230,6 +218,32 @@ impl ListModifyView {
         }
     }
 
+    fn on_item_card_in_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::Item(item) = &card.content {
+                self.items_in.remove(&item);
+                self.items_out.insert(item.clone());
+                self.deferred_actions.refresh_display = true;
+            }
+        }
+        Ok(())
+    }
+
+    fn on_item_card_out_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::Item(item) = &card.content {
+                self.items_out.remove(&item);
+                self.items_in.insert(item.clone());
+                self.deferred_actions.refresh_display = true;
+            }
+        }
+        Ok(())
+    }
+
 }
 
 #[godot_api]
@@ -247,6 +261,10 @@ impl PanelVirtual for ListModifyView {
             cards_out_container: GdHolder::default(),
             apply_button: GdHolder::default(),
             close_button: GdHolder::default(),
+
+            // observers
+            observer_card_in_left_click: None,
+            observer_card_out_left_click: None,
 
             // state
             list: List::default(),
@@ -282,7 +300,9 @@ impl PanelVirtual for ListModifyView {
                 0,
             );
             self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerIn/ScrollContainer/CardsInContainer");
+            self.observer_card_in_left_click = self.cards_in_container.ok_mut()?.bind_mut().bus_card_left_click.add_rx();
             self.cards_out_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerOut/ScrollContainer/CardsOutContainer");
+            self.observer_card_out_left_click = self.cards_out_container.ok_mut()?.bind_mut().bus_card_left_click.add_rx();
             self.apply_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/ListApplyButton");
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
@@ -304,6 +324,19 @@ impl PanelVirtual for ListModifyView {
 
     fn process(&mut self, _delta: f64) {
         match try {
+            // Item cards IN listener
+            if let Some(observer) = &mut self.observer_card_in_left_click {
+                if let Ok(card_id) = observer.try_recv() {
+                    self.on_item_card_in_left_click(card_id)?;
+                }
+            }
+            // Item cards OUT listener
+            if let Some(observer) = &mut self.observer_card_out_left_click {
+                if let Ok(card_id) = observer.try_recv() {
+                    self.on_item_card_out_left_click(card_id)?;
+                }
+            }
+
             if self.deferred_actions.save_name {
                 self.list.name = self.name_line_edit.ok()?.get_text().to_string();
             }
@@ -317,36 +350,6 @@ impl PanelVirtual for ListModifyView {
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
-        }
-    }
-}
-
-enum InOrOut {
-    In,
-    Out,
-}
-
-struct OnClickBehaviorSwitchItemsInOut {
-    pub parent: Gd<ListModifyView>,
-    pub in_or_out: InOrOut,
-}
-
-impl OnClickBehavior for OnClickBehaviorSwitchItemsInOut {
-    fn on_click(&mut self, content: &Content) {
-        if let Content::Item(item) = content {
-            let mut parent = self.parent.bind_mut();
-            // // Depending whether the item is in or out, move it from one list to the other
-            match self.in_or_out {
-                InOrOut::In => {
-                    parent.items_in.remove(&item);
-                    parent.items_out.insert(item.clone());
-                },
-                InOrOut::Out => {
-                    parent.items_out.remove(&item);
-                    parent.items_in.insert(item.clone());
-                }
-            }
-            parent.deferred_actions.refresh_display = true;
         }
     }
 }

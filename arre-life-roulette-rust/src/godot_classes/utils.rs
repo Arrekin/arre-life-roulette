@@ -61,6 +61,16 @@ impl<T> GdHolder<T>
             path: format!("{}::{}", base.to_string(), path),
         }
     }
+    pub fn from_gd(gd: Gd<T>) -> Self {
+        let path = gd.share().upcast::<Node>().get_path();
+        Self { gd: Some(gd), path: path.into() }
+    }
+    pub fn from_instance_id(instance_id: InstanceId) -> Self {
+        let object = Gd::<T>::try_from_instance_id(instance_id);
+        let gd = if let Some(object) = object { object.try_cast::<T>() } else { None };
+        let path = if let Some(gd) = &gd { gd.share().upcast::<Node>().get_path().into() } else { String::new() };
+        Self { gd, path: path.into() }
+    }
 }
 
 impl<T> Default for GdHolder<T>
@@ -68,5 +78,19 @@ impl<T> Default for GdHolder<T>
 {
     fn default() -> Self {
         Self { gd: None, path: String::new() }
+    }
+}
+
+impl<T> Clone for GdHolder<T>
+    where T: GodotClass
+{
+    fn clone(&self) -> Self {
+        Self {
+            gd: match &self.gd {
+                Some(v) => Some(v.share()),
+                None => None
+            },
+            path: self.path.clone()
+        }
     }
 }

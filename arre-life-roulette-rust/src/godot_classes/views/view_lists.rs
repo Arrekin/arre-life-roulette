@@ -1,14 +1,15 @@
+use bus::BusReader;
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
-use crate::godot_classes::element_card::{Content, OnClickBehavior};
+use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::godot_classes::views::view_list_modify::ListModifyView;
-use crate::godot_classes::views::view_roll::RollView;
+use crate::godot_classes::views::roll::view_roll::RollView;
 use crate::list::{List, list_get_all, list_search};
 
 #[derive(GodotClass)]
@@ -25,6 +26,10 @@ pub struct ListsView {
     // cached external UI elements
     pub list_roll_view: GdHolder<RollView>,
     pub list_modify_view: GdHolder<ListModifyView>,
+
+    // observers
+    observer_card_left_click: Option<BusReader<InstanceId>>,
+    observer_card_right_click: Option<BusReader<InstanceId>>,
 
     // state
     lists: Vec<List>,
@@ -86,22 +91,38 @@ impl ListsView {
     #[func]
     fn refresh_display(&mut self) {
         match try {
-            let self_reference = self.base.share().cast::<Self>();
-            self.cards_container.ok_mut()?.bind_mut().set_cards(
-                self.lists.clone(),
-                |mut card| {
-                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowListRollView {
-                        parent: self_reference.share(),
-                    }));
-                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowListModifyView {
-                        parent: self_reference.share(),
-                    }));
-                }
-            );
+            self.cards_container.ok_mut()?.bind_mut().set_cards(self.lists.clone());
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
         }
+    }
+
+    fn on_list_card_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::List(list) = &card.content {
+                let mut view = self.list_roll_view.ok_mut()?.bind_mut();
+                view.set_list(list.clone())?;
+                view.refresh_view();
+                view.show();
+            }
+        }
+        Ok(())
+    }
+
+    fn on_list_card_right_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::List(list) = &card.content {
+                let mut view = self.list_modify_view.ok_mut()?.bind_mut();
+                view.set_mode_edit(list.clone());
+                view.show();
+            }
+        }
+        Ok(())
     }
 }
 
@@ -120,6 +141,10 @@ impl ControlVirtual for ListsView {
             list_roll_view: GdHolder::default(),
             list_modify_view: GdHolder::default(),
 
+            // observers
+            observer_card_left_click: None,
+            observer_card_right_click: None,
+
             lists: vec![],
             search_term: None,
         }
@@ -134,6 +159,11 @@ impl ControlVirtual for ListsView {
                 0,
             );
             self.cards_container = GdHolder::from_path(base, "VBoxContainer/ListsListScrollContainer/CardsFlowContainer");
+            self.cards_container.ok_mut().map(|cc| {
+                let mut cc = cc.bind_mut();
+                self.observer_card_left_click = cc.bus_card_left_click.add_rx();
+                self.observer_card_right_click = cc.bus_card_right_click.add_rx();
+            })?;
             self.searchbar = GdHolder::from_path(base, "VBoxContainer/SearchBarLineEdit");
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
@@ -183,39 +213,23 @@ impl ControlVirtual for ListsView {
             Err(e) => { log_error(e); }
         }
     }
-}
-
-struct OnClickBehaviorShowListModifyView {
-    pub parent: Gd<ListsView>,
-}
-
-impl OnClickBehavior for OnClickBehaviorShowListModifyView {
-    fn on_click(&mut self, content: &Content) {
-        if let Content::List(list) = content {
-            let mut parent = self.parent.bind_mut();
-            parent.list_modify_view.ok_mut().map(|view| {
-                let mut view = view.bind_mut();
-                view.set_mode_edit(list.clone());
-                view.show();
-            }).unwrap_or_else(|e| log_error(e));
-        }
-    }
-}
-
-struct OnClickBehaviorShowListRollView {
-    pub parent: Gd<ListsView>,
-}
-
-impl OnClickBehavior for OnClickBehaviorShowListRollView {
-    fn on_click(&mut self, content: &Content) {
-        if let Content::List(list) = content {
-            let mut parent = self.parent.bind_mut();
-            parent.list_roll_view.ok_mut().map(|view| {
-                let mut view = view.bind_mut();
-                view.set_list(list.clone()).unwrap_or_else(|e| log_error(e));
-                view.refresh_view();
-                view.show();
-            }).unwrap_or_else(|e| log_error(e));
+    fn process(&mut self, _delta: f64) {
+        match try {
+            // Item cards LEFT click listener
+            if let Some(observer) = &mut self.observer_card_left_click {
+                if let Ok(card_id) = observer.try_recv() {
+                    self.on_list_card_left_click(card_id)?;
+                }
+            }
+            // Item cards RIGHT click listener
+            if let Some(observer) = &mut self.observer_card_right_click {
+                if let Ok(card_id) = observer.try_recv() {
+                    self.on_list_card_right_click(card_id)?;
+                }
+            }
+        }: ArreResult<()> {
+            Ok(_) => {},
+            Err(e) => { log_error(e); }
         }
     }
 }

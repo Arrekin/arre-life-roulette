@@ -1,8 +1,9 @@
+use bus::BusReader;
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
 use crate::errors::{ArreResult};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
-use crate::godot_classes::element_card::{OnClickBehavior, Content};
+use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
@@ -26,6 +27,10 @@ pub struct ItemsView {
     // cached external UI elements
     pub item_modify_view: GdHolder<ItemModifyView>,
     pub item_stats_view: GdHolder<ItemStatsView>,
+
+    // observers
+    observer_card_left_click: Option<BusReader<InstanceId>>,
+    observer_card_right_click: Option<BusReader<InstanceId>>,
 
     // state
     items: Vec<Item>,
@@ -89,22 +94,41 @@ impl ItemsView {
     #[func]
     fn refresh_display(&mut self) {
         match try {
-            let self_reference = self.base.share().cast::<Self>();
-            self.cards_container.ok_mut()?.bind_mut().set_cards(
-                self.items.clone(),
-                |mut card| {
-                    card.on_left_click_behavior = Some(Box::new(OnClickBehaviorShowItemStatsView {
-                        parent: self_reference.share(),
-                    }));
-                    card.on_right_click_behavior = Some(Box::new(OnClickBehaviorShowItemModifyView {
-                        parent: self_reference.share(),
-                    }));
-                }
-            );
+            self.cards_container.ok_mut()?.bind_mut().set_cards(self.items.clone());
         }: ArreResult<()> {
             Ok(_) => {},
             Err(e) => { log_error(e); }
         }
+    }
+
+    fn on_item_card_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::Item(item) = &card.content {
+                let globals = get_singleton::<Globals>("Globals");
+                let connection = &globals.bind().connection;
+
+                let mut view = self.item_stats_view.ok_mut()?.bind_mut();
+                view.item_stats = item_stats_get(connection, item.get_id()?)?;
+                view.refresh_display();
+                view.show();
+            }
+        }
+        Ok(())
+    }
+
+    fn on_item_card_right_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        {
+            let card = card.ok_mut()?.bind();
+            if let Content::Item(item) = &card.content {
+                let mut view = self.item_modify_view.ok_mut()?.bind_mut();
+                view.set_mode_edit(item.clone());
+                view.show();
+            }
+        }
+        Ok(())
     }
 }
 
@@ -123,6 +147,10 @@ impl ControlVirtual for ItemsView {
             item_modify_view: GdHolder::default(),
             item_stats_view: GdHolder::default(),
 
+            // observers
+            observer_card_left_click: None,
+            observer_card_right_click: None,
+
             // state
             items: vec![],
             search_term: None,
@@ -138,6 +166,11 @@ impl ControlVirtual for ItemsView {
                 0,
             );
             self.cards_container = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/CardsFlowContainer");
+            self.cards_container.ok_mut().map(|cc| {
+                let mut cc = cc.bind_mut();
+                self.observer_card_left_click = cc.bus_card_left_click.add_rx();
+                self.observer_card_right_click = cc.bus_card_right_click.add_rx();
+            })?;
             self.searchbar = GdHolder::from_path(base,"VBoxContainer/SearchBarLineEdit");
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
@@ -180,50 +213,26 @@ impl ControlVirtual for ItemsView {
             }
         }: ArreResult<()> {
             Ok(_) => {}
-            Err(e) => {
-                log_error(e)
-            },
+            Err(e) => { log_error(e) },
         }
     }
-}
-
-struct OnClickBehaviorShowItemModifyView {
-    pub parent: Gd<ItemsView>,
-}
-
-impl OnClickBehavior for OnClickBehaviorShowItemModifyView {
-    fn on_click(&mut self, content: &Content) {
-        if let Content::Item(item) = content {
-            let mut parent = self.parent.bind_mut();
-            parent.item_modify_view.ok_mut().map(|view| {
-                let mut view = view.bind_mut();
-                view.set_mode_edit(item.clone());
-                view.show();
-            }).unwrap_or_else(|e| log_error(e));
-        }
-    }
-}
-
-struct OnClickBehaviorShowItemStatsView {
-    pub parent: Gd<ItemsView>,
-}
-
-impl OnClickBehavior for OnClickBehaviorShowItemStatsView {
-    fn on_click(&mut self, content: &Content) {
+    fn process(&mut self, _delta: f64) {
         match try {
-            if let Content::Item(item) = content {
-                let globals = get_singleton::<Globals>("Globals");
-                let connection = &globals.bind().connection;
-
-                let mut parent = self.parent.bind_mut();
-                let mut view = parent.item_stats_view.ok_mut()?.bind_mut();
-                view.item_stats = item_stats_get(connection, item.get_id()?)?;
-                view.refresh_display();
-                view.show();
+            // Item cards LEFT click listener
+            if let Some(observer) = &mut self.observer_card_left_click {
+                if let Ok(card) = observer.try_recv() {
+                    self.on_item_card_left_click(card)?;
+                }
+            }
+            // Item cards RIGHT click listener
+            if let Some(observer) = &mut self.observer_card_right_click {
+                if let Ok(card) = observer.try_recv() {
+                    self.on_item_card_right_click(card)?;
+                }
             }
         }: ArreResult<()> {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err(e) => { log_error(e) }
         }
     }
 }

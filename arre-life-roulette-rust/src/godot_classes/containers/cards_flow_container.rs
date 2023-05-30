@@ -5,6 +5,7 @@ use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult};
 use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::resources::ELEMENT_CARD_PREFAB;
+use crate::godot_classes::singletons::buses::BusType;
 use crate::godot_classes::singletons::logger::log_error;
 
 #[derive(GodotClass)]
@@ -12,6 +13,10 @@ use crate::godot_classes::singletons::logger::log_error;
 pub struct CardsFlowContainer {
     #[base]
     base: Base<FlowContainer>,
+
+    // buses
+    pub bus_card_left_click: BusType<InstanceId>,
+    pub bus_card_right_click: BusType<InstanceId>,
 
     // cached sub-scenes
     element_card_prefab: Gd<PackedScene>,
@@ -22,12 +27,7 @@ pub struct CardsFlowContainer {
 
 #[godot_api]
 impl CardsFlowContainer {
-    pub fn set_cards<F>(
-        &mut self,
-        contents: Vec<impl Into<Content>>,
-        card_configure: F,
-    )
-    where F: Fn(GdMut<ElementCard>)
+    pub fn set_cards(&mut self, contents: Vec<impl Into<Content>>)
     {
         match try {
             // Clear old cards and then create a new card for each item
@@ -46,7 +46,8 @@ impl CardsFlowContainer {
                     {
                         let mut card = card.bind_mut();
                         card.set_content(content);
-                        (card_configure)(card);
+                        card.bus_left_click = self.bus_card_left_click.cloned()?;
+                        card.bus_right_click = self.bus_card_right_click.cloned()?;
                     }
                     Ok(card)
                 }
@@ -64,6 +65,12 @@ impl FlowContainerVirtual for CardsFlowContainer {
     fn init(base: Base<Self::Base>) -> Self {
         Self {
             base,
+
+            // buses
+            bus_card_left_click: BusType::new_shared(),
+            bus_card_right_click: BusType::new_shared(),
+
+            // cached sub-scenes
             element_card_prefab: load(ELEMENT_CARD_PREFAB),
 
             // cached internal UI elements
