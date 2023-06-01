@@ -39,6 +39,7 @@ pub struct RollSelectionSubview {
     // state
     list_id: ListId,
     items: HashMap<ItemId, SelectionItem>,
+    items_enabled: HashMap<ItemId, bool>,
 }
 
 #[godot_api]
@@ -59,6 +60,9 @@ impl RollSelectionSubview {
                 .map(|item| {
                     Ok((item.get_id()?, SelectionItem { item, selected: true, }))
                 }).collect::<ArreResult<_>>()?;
+            self.items_enabled = self.items.keys().map(|item_id| {
+                (*item_id, true)
+            }).collect();
         }: ArreResult<()> {
             Ok(_) => {}
             Err(e) => log_error(e)
@@ -89,6 +93,21 @@ impl RollSelectionSubview {
         // godot_print!("Selected work item: {}", self.work_item);
         // self.refresh_view();
     }
+
+    fn on_item_card_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
+        let mut card = GdHolder::<ElementCard>::from_instance_id(card_id);
+        let mut card = card.ok_mut()?.bind_mut();
+        if let Content::Item(item) = &card.content {
+            let item_id = item.get_id()?;
+            let was_item_enabled = self.items_enabled[&item_id];
+            let is_item_enabled = !was_item_enabled;
+            self.items_enabled.insert(item_id, is_item_enabled);
+            card.set_modulate(
+                if is_item_enabled { Color::from_rgba(1.0, 1.0, 1.0, 1.0) } else { Color::from_rgba(1.0, 1.0, 1.0, 0.3) }
+            );
+        }
+        Ok(())
+    }
 }
 
 #[godot_api]
@@ -107,6 +126,7 @@ impl VBoxContainerVirtual for RollSelectionSubview {
             // state
             list_id: 0.into(),
             items: HashMap::new(),
+            items_enabled: HashMap::new(),
         }
     }
     fn ready(&mut self) {
@@ -127,4 +147,17 @@ impl VBoxContainerVirtual for RollSelectionSubview {
             Err(e) => log_error(e),
         }
     }
+    fn process(&mut self, _delta: f64) {
+        match try {
+            if let Some(observer) = &mut self.observer_card_left_click {
+                if let Ok(card) = observer.try_recv() {
+                    self.on_item_card_left_click(card)?;
+                }
+            }
+        }: ArreResult<()> {
+            Ok(_) => {}
+            Err(e) => log_error(e),
+        }
+    }
+
 }
