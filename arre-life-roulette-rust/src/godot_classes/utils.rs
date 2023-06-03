@@ -61,15 +61,19 @@ impl<T> GdHolder<T>
             path: format!("{}::{}", base.to_string(), path),
         }
     }
-    pub fn from_gd(gd: Gd<T>) -> Self {
-        let path = gd.share().upcast::<Node>().get_path();
-        Self { gd: Some(gd), path: path.into() }
+    pub fn from_gd<F: GodotClass + Inherits<Node>>(gd: Gd<F>) -> Self {
+        let gd = gd.upcast();
+        let path = gd.get_path();
+        Self { gd: gd.try_cast::<T>(), path: path.into() }
+    }
+    pub fn from_node(node: Gd<Node>) -> Self {
+        let path = node.get_path();
+        Self { gd: node.try_cast::<T>(), path: path.into() }
     }
     pub fn from_instance_id(instance_id: InstanceId) -> Self {
-        let object = Gd::<T>::try_from_instance_id(instance_id);
-        let gd = if let Some(object) = object { object.try_cast::<T>() } else { None };
-        let path = if let Some(gd) = &gd { gd.share().upcast::<Node>().get_path().into() } else { String::new() };
-        Self { gd, path: path.into() }
+        let gd = Gd::<Node>::try_from_instance_id(instance_id);
+        let path = if let Some(gd) = &gd { gd.get_path().into() } else { String::new() };
+        Self { gd: gd.and_then(|gd| gd.try_cast::<T>()), path: path.into() }
     }
 }
 

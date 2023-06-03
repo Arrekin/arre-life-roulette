@@ -8,6 +8,7 @@ use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
 use crate::item::{Item, ItemId};
 use crate::list::{list_items_get, ListId};
 
@@ -30,8 +31,11 @@ pub struct RollSelectionSubview {
     base: Base<VBoxContainer>,
 
     // cached internal UI elements
-    cards_container: GdHolder<CardsFlowContainer>,
-    roll_start_button: GdHolder<Button>,
+    pub cards_container: GdHolder<CardsFlowContainer>,
+    pub roll_start_button: GdHolder<Button>,
+
+    // cached external UI elements
+    pub roll_view: GdHolder<RollView>,
 
     // observers
     observer_card_left_click: Option<BusReader<InstanceId>>,
@@ -60,9 +64,7 @@ impl RollSelectionSubview {
                 .map(|item| {
                     Ok((item.get_id()?, SelectionItem { item, selected: true, }))
                 }).collect::<ArreResult<_>>()?;
-            self.items_enabled = self.items.keys().map(|item_id| {
-                (*item_id, true)
-            }).collect();
+            self.items_enabled = self.items.keys().map(|item_id| (*item_id, true)).collect();
         }: ArreResult<()> {
             Ok(_) => {}
             Err(e) => log_error(e)
@@ -81,17 +83,18 @@ impl RollSelectionSubview {
 
     #[func]
     fn on_roll_start_button_up(&mut self) {
-        // if self.items.len() == 0 {
-        //     log_error(ArreError::ListHasNoItems(self.list.name.clone()));
-        //     return;
-        // }
-        // let mut rng = rand::thread_rng();
-        // self.work_item = rng.gen_range(0..self.items.len());
-        // self.work_start_timestamp = Utc::now();
-        //
-        // self.roll_state = RollState::WorkAssigned;
-        // godot_print!("Selected work item: {}", self.work_item);
-        // self.refresh_view();
+        match try {
+            // make list of enabled items to choose from
+            let work_items = self.items_enabled
+                .iter()
+                .filter(|(_, enabled)| **enabled)
+                .map(|(item_id, _)| *item_id)
+                .collect::<Vec<_>>();
+            self.roll_view.ok_mut()?.bind_mut().roll_state_change_request(RollState::Rolling(work_items));
+        }: ArreResult<()> {
+            Ok(_) => {}
+            Err(e) => log_error(e)
+        }
     }
 
     fn on_item_card_left_click(&mut self, card_id: InstanceId) -> ArreResult<()> {
@@ -120,6 +123,9 @@ impl VBoxContainerVirtual for RollSelectionSubview {
             cards_container: GdHolder::default(),
             roll_start_button: GdHolder::default(),
 
+            // cached external UI elements
+            roll_view: GdHolder::default(),
+
             // observers
             observer_card_left_click: None,
 
@@ -133,6 +139,7 @@ impl VBoxContainerVirtual for RollSelectionSubview {
         match try {
             let base = &self.base;
 
+            // cached internal UI elements
             self.cards_container = GdHolder::from_path(base, "TopMarginContainer/PanelContainer/ScrollContainer/CardsFlowContainer");
             self.observer_card_left_click = self.cards_container.ok_mut()?.bind_mut().bus_card_left_click.add_rx();
 
@@ -142,6 +149,9 @@ impl VBoxContainerVirtual for RollSelectionSubview {
                 base.callable("on_roll_start_button_up"),
                 0,
             );
+
+            // cached external UI elements
+            // self.roll_view is set from RollView::ready()
         }: ArreResult<()> {
             Ok(_) => {}
             Err(e) => log_error(e),
