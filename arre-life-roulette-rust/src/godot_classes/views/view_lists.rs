@@ -104,7 +104,7 @@ impl ListsView {
             let card = card.ok_mut()?.bind();
             if let Content::List(list) = &card.content {
                 let mut view = self.list_roll_view.ok_mut()?.bind_mut();
-                view.set_list(list.clone())?;
+                view.set_list(list.clone());
                 view.refresh_view();
                 view.show();
             }

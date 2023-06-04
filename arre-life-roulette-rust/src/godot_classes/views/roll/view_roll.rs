@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration};
 use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
 use rand::seq::{IteratorRandom};
@@ -7,15 +7,15 @@ use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::godot_classes::views::roll::subview_selection::RollSelectionSubview;
+use crate::godot_classes::views::roll::subview_work_assigned::RollWorkAssignedSubview;
 use crate::item::{Item, item_get, ItemId};
-use crate::item_stats::{item_stats_get, item_stats_update};
 use crate::list::{List};
 
 pub enum RollState {
     ItemsSelection,
     Rolling(Vec<ItemId>),
-    WorkAssigned(Item),
-    WorkFinished,
+    WorkAssigned{item: Item},
+    WorkFinished(Duration),
 }
 
 #[derive(GodotClass)]
@@ -27,13 +27,9 @@ pub struct RollView {
     // cached UI elements
     work_cancel_button: GdHolder<Button>,
     list_name_label: GdHolder<Label>,
-    // awaiting subview
+    // subviews
     selection_subview: GdHolder<RollSelectionSubview>,
-    // work assigned subview
-    work_assigned_subview: GdHolder<Control>,
-    item_name_label: GdHolder<Label>,
-    item_description_label: GdHolder<Label>,
-    work_finish_button: GdHolder<Button>,
+    work_assigned_subview: GdHolder<RollWorkAssignedSubview>,
     // work finished subview
     work_finished_subview: GdHolder<Control>,
     roll_again_button: GdHolder<Button>,
@@ -43,8 +39,6 @@ pub struct RollView {
     list: List,
     roll_state: RollState,
     roll_state_requested: Option<RollState>,
-    work_start_timestamp: DateTime<Utc>,
-    time_worked: Duration, // To display after work is done
 }
 
 #[godot_api]
@@ -52,14 +46,9 @@ impl RollView {
     #[signal]
     fn dialog_closed();
 
-    pub fn set_list(&mut self, list: List) -> ArreResult<()> {
-        // Reset view
-        self.roll_state = RollState::ItemsSelection;
-
+    pub fn set_list(&mut self, list: List) {
+        self.roll_state_requested = Some(RollState::ItemsSelection);
         self.list = list;
-        self.selection_subview.ok_mut()?.bind_mut().set_state(self.list.get_id()?);
-        self.selection_subview.ok_mut()?.bind_mut().refresh_display();
-        Ok(())
     }
 
     #[func]
@@ -74,13 +63,11 @@ impl RollView {
                 RollState::Rolling(_items_list) => {
                     // TODO
                 },
-                RollState::WorkAssigned(work_item) => {
-                    self.item_name_label.ok_mut()?.set_text(work_item.name.clone().into());
-                    self.item_description_label.ok_mut()?.set_text(work_item.description.clone().into());
+                RollState::WorkAssigned{..} => {
                     self.hide_all_subviews()?;
-                    self.work_assigned_subview.ok_mut()?.set_visible(true);
+                    self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(true);
                 },
-                RollState::WorkFinished => {
+                RollState::WorkFinished(_duration) => {
                     self.hide_all_subviews()?;
                     self.work_finished_subview.ok_mut()?.set_visible(true);
                 }
@@ -93,14 +80,14 @@ impl RollView {
 
     fn hide_all_subviews(&mut self) -> ArreResult<()> {
         self.selection_subview.ok_mut()?.bind_mut().set_visible(false);
-        self.work_assigned_subview.ok_mut()?.set_visible(false);
+        self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(false);
         self.work_finished_subview.ok_mut()?.set_visible(false);
         Ok(())
     }
 
     #[func]
     fn on_work_finish_button_up(&mut self) {
-        self.roll_state_requested = Some(RollState::WorkFinished);
+        self.roll_state_requested = Some(RollState::WorkFinished(Duration::zero()));
     }
 
     #[func]
@@ -139,9 +126,6 @@ impl PanelVirtual for RollView {
             selection_subview: GdHolder::default(),
             // work assigned subview
             work_assigned_subview: GdHolder::default(),
-            item_name_label: GdHolder::default(),
-            item_description_label: GdHolder::default(),
-            work_finish_button: GdHolder::default(),
             // work finished subview
             work_finished_subview: GdHolder::default(),
             roll_again_button: GdHolder::default(),
@@ -150,8 +134,6 @@ impl PanelVirtual for RollView {
             list: List::default(),
             roll_state: RollState::ItemsSelection,
             roll_state_requested: None,
-            work_start_timestamp: Utc::now(),
-            time_worked: Duration::zero(),
         }
     }
     fn ready(&mut self) {
@@ -165,20 +147,11 @@ impl PanelVirtual for RollView {
                 0,
             );
             self.list_name_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/ListNameLabel");
-            // selection subview
+            // subviews
             self.selection_subview = GdHolder::from_path(base, "VBoxContainer/SelectionSubview");
             self.selection_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
-
-            // work assigned subview
             self.work_assigned_subview = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview");
-            self.item_name_label = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/ItemNameLabel");
-            self.item_description_label = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/ItemDescriptionLabel");
-            self.work_finish_button = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview/WorkFinishButton");
-            self.work_finish_button.ok_mut()?.connect(
-                "button_up".into(),
-                base.callable("on_work_finish_button_up"),
-                0,
-            );
+            self.work_assigned_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
 
             // work finished subview
             self.work_finished_subview = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview");
@@ -204,34 +177,29 @@ impl PanelVirtual for RollView {
             if let Some(new_requested_state) = self.roll_state_requested.take() {
                 self.roll_state  = match new_requested_state {
                     RollState::ItemsSelection => {
+                        let mut selection_subview = self.selection_subview.ok_mut()?.bind_mut();
+                        selection_subview.set_state(self.list.get_id()?);
+                        selection_subview.refresh_display();
                         RollState::ItemsSelection
                     },
                     RollState::Rolling(work_items) => {
                         let mut rng = rand::thread_rng();
-                        let work_item = work_items.into_iter().choose(&mut rng).ok_or(ArreError::ItemsSelectionIsEmpty())?;
+                        let work_item = work_items.iter().choose(&mut rng).ok_or(ArreError::ItemsSelectionIsEmpty())?;
 
                         let globals = get_singleton::<Globals>("Globals");
                         let connection = &globals.bind().connection;
 
-                        self.work_start_timestamp = Utc::now();
-                        RollState::WorkAssigned(item_get(connection, work_item)?)
+                        self.roll_state_change_request(RollState::WorkAssigned{item: item_get(connection, *work_item)?});
+                        RollState::Rolling(work_items)
                     },
-                    RollState::WorkAssigned(item_id) => {
-                        RollState::WorkAssigned(item_id)
+                    RollState::WorkAssigned{item} => {
+                        let mut work_subview = self.work_assigned_subview.ok_mut()?.bind_mut();
+                        work_subview.set_state(item.clone());
+                        work_subview.refresh_display();
+                        RollState::WorkAssigned{item}
                     }
-                    RollState::WorkFinished => {
-                        if let RollState::WorkAssigned(item) = &self.roll_state {
-                            self.time_worked = Utc::now() - self.work_start_timestamp;
-
-                            // Update stats in db
-                            let globals = get_singleton::<Globals>("Globals");
-                            let connection = &globals.bind().connection;
-                            let mut item_stats = item_stats_get(connection, item.get_id()?)?;
-                            item_stats.times_worked += 1;
-                            item_stats.time_spent = item_stats.time_spent + self.time_worked;
-                            item_stats_update(connection, &item_stats)?;
-                        }
-                        RollState::WorkFinished
+                    RollState::WorkFinished(duration) => {
+                        RollState::WorkFinished(duration)
                     }
                 };
                 self.refresh_view();

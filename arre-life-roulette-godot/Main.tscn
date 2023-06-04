@@ -1,8 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=6 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 [ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
-[ext_resource type="PackedScene" uid="uid://bixfoa2ureytr" path="res://Prefabs/ElementCardPrefab.tscn" id="3_vuyas"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
 bg_color = Color(0.117647, 0.262745, 0.262745, 1)
@@ -175,6 +174,7 @@ text = "List: ########"
 horizontal_alignment = 1
 
 [node name="SelectionSubview" type="RollSelectionSubview" parent="UI/RollView/VBoxContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -197,9 +197,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 2
 alignment = 1
 
-[node name="MarginContainer" parent="UI/RollView/VBoxContainer/SelectionSubview/TopMarginContainer/PanelContainer/ScrollContainer/CardsFlowContainer" instance=ExtResource("3_vuyas")]
-layout_mode = 2
-
 [node name="BottomMarginContainer" type="MarginContainer" parent="UI/RollView/VBoxContainer/SelectionSubview"]
 layout_mode = 2
 theme_override_constants/margin_left = 200
@@ -212,66 +209,34 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Roll!"
 
-[node name="WorkAssignedSubview" type="Control" parent="UI/RollView/VBoxContainer"]
+[node name="WorkAssignedSubview" type="RollWorkAssignedSubview" parent="UI/RollView/VBoxContainer"]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ItemNameLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -512.0
-offset_top = 185.0
-offset_right = 531.0
-offset_bottom = 257.0
-grow_horizontal = 2
+layout_mode = 2
 theme_override_font_sizes/font_size = 50
 text = "Rolled item: ############"
 horizontal_alignment = 1
 
 [node name="ItemDescriptionLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -512.0
-offset_top = 282.0
-offset_right = 528.0
-offset_bottom = 368.0
-grow_horizontal = 2
+layout_mode = 2
 text = "<<< Item description goes here >>>"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
-text_overrun_behavior = 3
 
 [node name="MotivatorLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -353.0
-offset_top = 429.0
-offset_right = 461.0
-offset_bottom = 471.0
-grow_horizontal = 2
+layout_mode = 2
+size_flags_vertical = 6
 theme_override_font_sizes/font_size = 20
 text = "Work on your item and come back once you are done!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="WorkFinishButton" type="Button" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -365.0
-offset_top = 495.0
-offset_right = 375.0
-offset_bottom = 599.0
-grow_horizontal = 2
+layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Mark as completed"
 
