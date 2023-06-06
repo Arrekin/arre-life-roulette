@@ -1,5 +1,4 @@
 #![feature(try_blocks)]
-#![feature(type_ascription)]
 mod item;
 mod item_tag;
 mod db_init;

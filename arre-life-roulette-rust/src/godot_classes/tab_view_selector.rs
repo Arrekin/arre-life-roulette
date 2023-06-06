@@ -1,7 +1,7 @@
 use godot::engine::{Button, DisplayServer, HBoxContainer};
 use godot::engine::{HBoxContainerVirtual};
 use godot::prelude::*;
-use crate::errors::ArreResult;
+use crate::errors::{BoxedError};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -75,9 +75,9 @@ impl HBoxContainerVirtual for TabViewSelector {
                 base.callable("on_tag_view_button_up"),
                 0,
             );
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }

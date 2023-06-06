@@ -1,6 +1,6 @@
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{BoxedError};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -60,9 +60,9 @@ impl ItemModifyView {
             }?;
 
             self.refresh_display();
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -82,9 +82,9 @@ impl ItemModifyView {
                     self.apply_button.ok_mut()?.set_text(UI_TEXT_MODIFY.into());
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -141,9 +141,9 @@ impl PanelVirtual for ItemModifyView {
                 base.callable("on_dialog_close_button_up"),
                 0,
             );
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }

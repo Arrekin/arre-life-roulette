@@ -1,7 +1,7 @@
 use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Label, Button};
 use godot::engine::global::MouseButton;
 use godot::prelude::*;
-use crate::errors::ArreResult;
+use crate::errors::{BoxedError};
 use crate::godot_classes::singletons::buses::{BusType};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
@@ -57,9 +57,9 @@ impl ElementCard {
             };
             self.name_label.ok_mut()?.set_text(name.into());
             self.description_label.ok_mut()?.set_text(description.into());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 
@@ -119,9 +119,9 @@ impl MarginContainerVirtual for ElementCard {
             );
             self.name_label = GdHolder::from_path(base, "MarginContainer/VBoxContainer/NameLabel");
             self.description_label = GdHolder::from_path(base, "MarginContainer/VBoxContainer/DescriptionLabel");
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 }

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use bus::BusReader;
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::element_card::{ElementCard, Content};
@@ -99,9 +99,9 @@ impl ListModifyView {
             }
             self.refresh_state();
             self.refresh_display();
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -124,9 +124,9 @@ impl ListModifyView {
             self.cards_in_container.ok_mut()?.bind_mut().set_cards(display_items_in);
             let display_items_out = self.get_display_items_out()?;
             self.cards_out_container.ok_mut()?.bind_mut().set_cards(display_items_out)
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -152,9 +152,9 @@ impl ListModifyView {
             let search_term = self.searchbar.ok()?.get_text().to_string();
             self.search_term = if search_term.is_empty() { None } else { Some(search_term) };
             self.deferred_actions.refresh_display = true;
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(err) => { log_error(err);}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -315,9 +315,9 @@ impl PanelVirtual for ListModifyView {
                 base.callable("on_dialog_close_button_up"),
                 0,
             );
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
 
     }
@@ -347,9 +347,9 @@ impl PanelVirtual for ListModifyView {
                 self.refresh_display();
             }
             self.deferred_actions = DeferredActions::default();
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }

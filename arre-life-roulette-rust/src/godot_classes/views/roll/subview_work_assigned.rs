@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use godot::engine::{Button, Label, VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{BoxedError};
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -41,9 +41,9 @@ impl RollWorkAssignedSubview {
         match try {
             self.item_name_label.ok_mut()?.set_text(self.work_item.name.clone().into());
             self.item_description_label.ok_mut()?.set_text(self.work_item.description.clone().into());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -59,9 +59,9 @@ impl RollWorkAssignedSubview {
             item_stats.time_spent = item_stats.time_spent + time_worked;
             item_stats_update(connection, &item_stats)?;
             self.roll_view.ok_mut()?.bind_mut().roll_state_change_request(RollState::WorkFinished(time_worked));
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }
@@ -101,9 +101,9 @@ impl VBoxContainerVirtual for RollWorkAssignedSubview {
 
             // cached external UI elements
             // self.roll_view is set from RollView::ready()
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use bus::BusReader;
 use godot::engine::{Button, VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::singletons::globals::{Globals};
@@ -65,9 +65,9 @@ impl RollSelectionSubview {
                     Ok((item.get_id()?, SelectionItem { item, selected: true, }))
                 }).collect::<ArreResult<_>>()?;
             self.items_enabled = self.items.keys().map(|item_id| (*item_id, true)).collect();
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -75,9 +75,9 @@ impl RollSelectionSubview {
         match try {
             let mut cards_container = self.cards_container.ok_mut()?.bind_mut();
             cards_container.set_cards(self.items.values().cloned().collect());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -91,9 +91,9 @@ impl RollSelectionSubview {
                 .map(|(item_id, _)| *item_id)
                 .collect::<Vec<_>>();
             self.roll_view.ok_mut()?.bind_mut().roll_state_change_request(RollState::Rolling(work_items));
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -152,9 +152,9 @@ impl VBoxContainerVirtual for RollSelectionSubview {
 
             // cached external UI elements
             // self.roll_view is set from RollView::ready()
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
     fn process(&mut self, _delta: f64) {
@@ -164,9 +164,9 @@ impl VBoxContainerVirtual for RollSelectionSubview {
                     self.on_item_card_left_click(card)?;
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 

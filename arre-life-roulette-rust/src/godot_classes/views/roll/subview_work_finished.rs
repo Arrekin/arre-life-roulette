@@ -1,6 +1,6 @@
 use godot::engine::{Button, VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{BoxedError};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
 use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
@@ -27,9 +27,9 @@ impl RollWorkFinishedSubview {
     fn on_close_button_up(&mut self) {
         match try {
             self.roll_view.ok_mut()?.bind_mut().close_dialog();
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -37,9 +37,9 @@ impl RollWorkFinishedSubview {
     fn on_roll_again_button_up(&mut self) {
         match try {
             self.roll_view.ok_mut()?.bind_mut().roll_state_change_request(RollState::ItemsSelection)
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e)
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }
@@ -78,9 +78,9 @@ impl VBoxContainerVirtual for RollWorkFinishedSubview {
 
             // cached external UI elements
             // self.roll_view is set from RollView::ready()
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 }

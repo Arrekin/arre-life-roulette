@@ -1,7 +1,7 @@
 use bus::BusReader;
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::singletons::globals::{Globals};
@@ -47,9 +47,9 @@ impl ItemsView {
                 view.set_mode_add();
                 view.show();
             })?;
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -85,9 +85,9 @@ impl ItemsView {
                     self.items = item_get_all(connection)?;
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -95,9 +95,9 @@ impl ItemsView {
     fn refresh_display(&mut self) {
         match try {
             self.cards_container.ok_mut()?.bind_mut().set_cards(self.items.clone());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -211,9 +211,9 @@ impl ControlVirtual for ItemsView {
             if self.is_visible() {
                 self.refresh_full();
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => { log_error(e) },
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
     fn process(&mut self, _delta: f64) {
@@ -230,9 +230,9 @@ impl ControlVirtual for ItemsView {
                     self.on_item_card_right_click(card)?;
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => { log_error(e) }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }

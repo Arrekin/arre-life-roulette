@@ -2,7 +2,7 @@ use godot::engine::{Control, ControlVirtual, VBoxContainer, RichTextLabel, Input
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
-use crate::errors::{ArreError, ArreResult};
+use crate::errors::{ArreError, BoxedError};
 use crate::godot_classes::resources::{LOG_ENTRY_PREFAB, LOGS_VIEW_TOGGLE, SELECTION_BUTTON_PREFAB};
 use crate::godot_classes::singletons::logger::{log_error, Logger};
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -46,9 +46,9 @@ impl LogsView {
                         vbox.add_child(log_node, false, InternalMode::INTERNAL_MODE_DISABLED);
                     }).ok_or(ArreError::NullGd("LogsView::refresh_display::<RichTextLabel>".into()))?;
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }
@@ -67,9 +67,9 @@ impl ControlVirtual for LogsView {
         match try {
             let base = &self.base;
             self.logs_vboxcontainer = GdHolder::from_path(base, "ScrollContainer/VBoxContainer");
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 

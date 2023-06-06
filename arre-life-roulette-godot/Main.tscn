@@ -209,6 +209,10 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Roll!"
 
+[node name="RollingSubview" type="RollRollingSubview" parent="UI/RollView/VBoxContainer"]
+visible = false
+layout_mode = 2
+
 [node name="WorkAssignedSubview" type="RollWorkAssignedSubview" parent="UI/RollView/VBoxContainer"]
 visible = false
 layout_mode = 2

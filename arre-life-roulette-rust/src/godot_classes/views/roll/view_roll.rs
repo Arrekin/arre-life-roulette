@@ -1,15 +1,14 @@
 use chrono::{Duration};
-use godot::engine::{Control, Panel, PanelVirtual, Button, Label};
+use godot::engine::{Panel, PanelVirtual, Button, Label};
 use godot::prelude::*;
-use rand::seq::{IteratorRandom};
-use crate::errors::{ArreResult, ArreError};
-use crate::godot_classes::singletons::globals::{Globals};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::utils::{GdHolder};
+use crate::godot_classes::views::roll::subview_rolling::RollRollingSubview;
 use crate::godot_classes::views::roll::subview_selection::RollSelectionSubview;
 use crate::godot_classes::views::roll::subview_work_assigned::RollWorkAssignedSubview;
 use crate::godot_classes::views::roll::subview_work_finished::RollWorkFinishedSubview;
-use crate::item::{Item, item_get, ItemId};
+use crate::item::{Item, ItemId};
 use crate::list::{List};
 
 pub enum RollState {
@@ -30,12 +29,13 @@ pub struct RollView {
     list_name_label: GdHolder<Label>,
     // subviews
     selection_subview: GdHolder<RollSelectionSubview>,
+    rolling_subview: GdHolder<RollRollingSubview>,
     work_assigned_subview: GdHolder<RollWorkAssignedSubview>,
     work_finished_subview: GdHolder<RollWorkFinishedSubview>,
 
     // state
     list: List,
-    roll_state: RollState,
+    pub roll_state: RollState,
     roll_state_requested: Option<RollState>,
 }
 
@@ -53,31 +53,22 @@ impl RollView {
     pub fn refresh_view(&mut self){
         match try {
             self.list_name_label.ok_mut()?.set_text(self.list.name.clone().into());
+            self.hide_all_subviews()?;
             match &self.roll_state {
-                RollState::ItemsSelection => {
-                    self.hide_all_subviews()?;
-                    self.selection_subview.ok_mut()?.bind_mut().set_visible(true);
-                },
-                RollState::Rolling(_items_list) => {
-                    // TODO
-                },
-                RollState::WorkAssigned{..} => {
-                    self.hide_all_subviews()?;
-                    self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(true);
-                },
-                RollState::WorkFinished(_duration) => {
-                    self.hide_all_subviews()?;
-                    self.work_finished_subview.ok_mut()?.bind_mut().set_visible(true);
-                }
+                RollState::ItemsSelection => self.selection_subview.ok_mut()?.bind_mut().set_visible(true),
+                RollState::Rolling(_items_list) => self.rolling_subview.ok_mut()?.bind_mut().set_visible(true),
+                RollState::WorkAssigned{..} => self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(true),
+                RollState::WorkFinished(_duration) => self.work_finished_subview.ok_mut()?.bind_mut().set_visible(true),
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
     fn hide_all_subviews(&mut self) -> ArreResult<()> {
         self.selection_subview.ok_mut()?.bind_mut().set_visible(false);
+        self.rolling_subview.ok_mut()?.bind_mut().set_visible(false);
         self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(false);
         self.work_finished_subview.ok_mut()?.bind_mut().set_visible(false);
         Ok(())
@@ -116,6 +107,7 @@ impl PanelVirtual for RollView {
             list_name_label: GdHolder::default(),
             // subviews
             selection_subview: GdHolder::default(),
+            rolling_subview: GdHolder::default(),
             work_assigned_subview: GdHolder::default(),
             work_finished_subview: GdHolder::default(),
 
@@ -138,13 +130,15 @@ impl PanelVirtual for RollView {
             // subviews
             self.selection_subview = GdHolder::from_path(base, "VBoxContainer/SelectionSubview");
             self.selection_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
+            self.rolling_subview = GdHolder::from_path(base, "VBoxContainer/RollingSubview");
+            self.rolling_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
             self.work_assigned_subview = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview");
             self.work_assigned_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
             self.work_finished_subview = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview");
             self.work_finished_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
     fn process(&mut self, _delta: f64) {
@@ -158,13 +152,7 @@ impl PanelVirtual for RollView {
                         RollState::ItemsSelection
                     },
                     RollState::Rolling(work_items) => {
-                        let mut rng = rand::thread_rng();
-                        let work_item = work_items.iter().choose(&mut rng).ok_or(ArreError::ItemsSelectionIsEmpty())?;
-
-                        let globals = get_singleton::<Globals>("Globals");
-                        let connection = &globals.bind().connection;
-
-                        self.roll_state_change_request(RollState::WorkAssigned{item: item_get(connection, *work_item)?});
+                        self.rolling_subview.ok_mut()?.bind_mut().do_roll_deferred = true;
                         RollState::Rolling(work_items)
                     },
                     RollState::WorkAssigned{item} => {
@@ -179,9 +167,9 @@ impl PanelVirtual for RollView {
                 };
                 self.refresh_view();
             };
-        }: ArreResult<()> {
+        } {
             Ok(_) => {}
-            Err(e) => log_error(e),
+            Err::<_, BoxedError>(e) => log_error(e),
         }
     }
 }

@@ -2,7 +2,7 @@ use godot::engine::{FlowContainer, FlowContainerVirtual, PackedScene};
 use godot::engine::node::InternalMode;
 use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
-use crate::errors::{ArreError, ArreResult};
+use crate::errors::{ArreError, ArreResult, BoxedError};
 use crate::godot_classes::element_card::{Content, ElementCard};
 use crate::godot_classes::resources::ELEMENT_CARD_PREFAB;
 use crate::godot_classes::singletons::buses::BusType;
@@ -53,9 +53,9 @@ impl CardsFlowContainer {
                 }
             ).collect::<ArreResult<Vec<_>>>()?;
             self.item_cards.extend(new_cards);
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }

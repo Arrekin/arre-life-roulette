@@ -1,7 +1,7 @@
 use bus::BusReader;
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
-use crate::errors::{ArreResult};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::element_card::{Content, ElementCard};
@@ -44,9 +44,9 @@ impl ListsView {
             let mut view = self.list_modify_view.ok_mut()?.bind_mut();
             view.set_mode_add();
             view.set_visible(true);
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -82,9 +82,9 @@ impl ListsView {
                     self.lists = list_get_all(connection)?;
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -92,9 +92,9 @@ impl ListsView {
     fn refresh_display(&mut self) {
         match try {
             self.cards_container.ok_mut()?.bind_mut().set_cards(self.lists.clone());
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
@@ -208,9 +208,9 @@ impl ControlVirtual for ListsView {
                     self.refresh_full();
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
     fn process(&mut self, _delta: f64) {
@@ -227,9 +227,9 @@ impl ControlVirtual for ListsView {
                     self.on_list_card_right_click(card_id)?;
                 }
             }
-        }: ArreResult<()> {
+        } {
             Ok(_) => {},
-            Err(e) => { log_error(e); }
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 }
