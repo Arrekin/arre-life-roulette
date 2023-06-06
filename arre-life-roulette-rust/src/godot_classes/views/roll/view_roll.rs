@@ -8,6 +8,7 @@ use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
 use crate::godot_classes::views::roll::subview_selection::RollSelectionSubview;
 use crate::godot_classes::views::roll::subview_work_assigned::RollWorkAssignedSubview;
+use crate::godot_classes::views::roll::subview_work_finished::RollWorkFinishedSubview;
 use crate::item::{Item, item_get, ItemId};
 use crate::list::{List};
 
@@ -30,10 +31,7 @@ pub struct RollView {
     // subviews
     selection_subview: GdHolder<RollSelectionSubview>,
     work_assigned_subview: GdHolder<RollWorkAssignedSubview>,
-    // work finished subview
-    work_finished_subview: GdHolder<Control>,
-    roll_again_button: GdHolder<Button>,
-    close_button: GdHolder<Button>,
+    work_finished_subview: GdHolder<RollWorkFinishedSubview>,
 
     // state
     list: List,
@@ -69,7 +67,7 @@ impl RollView {
                 },
                 RollState::WorkFinished(_duration) => {
                     self.hide_all_subviews()?;
-                    self.work_finished_subview.ok_mut()?.set_visible(true);
+                    self.work_finished_subview.ok_mut()?.bind_mut().set_visible(true);
                 }
             }
         }: ArreResult<()> {
@@ -81,7 +79,7 @@ impl RollView {
     fn hide_all_subviews(&mut self) -> ArreResult<()> {
         self.selection_subview.ok_mut()?.bind_mut().set_visible(false);
         self.work_assigned_subview.ok_mut()?.bind_mut().set_visible(false);
-        self.work_finished_subview.ok_mut()?.set_visible(false);
+        self.work_finished_subview.ok_mut()?.bind_mut().set_visible(false);
         Ok(())
     }
 
@@ -91,7 +89,7 @@ impl RollView {
     }
 
     #[func]
-    fn on_work_cancel_button_up(&mut self) {
+    pub fn close_dialog(&mut self) {
         self.base.hide();
         self.emit_signal("dialog_closed".into(), &[]);
     }
@@ -100,12 +98,6 @@ impl RollView {
     fn on_roll_again_button_up(&mut self) {
         self.roll_state = RollState::ItemsSelection;
         self.refresh_view();
-    }
-
-    #[func]
-    fn on_close_button_up(&mut self) {
-        self.base.hide();
-        self.emit_signal("dialog_closed".into(), &[]);
     }
 
     pub fn roll_state_change_request(&mut self, new_state: RollState) {
@@ -122,14 +114,10 @@ impl PanelVirtual for RollView {
             // cached UI elements
             work_cancel_button: GdHolder::default(),
             list_name_label: GdHolder::default(),
-            // awaiting subview
+            // subviews
             selection_subview: GdHolder::default(),
-            // work assigned subview
             work_assigned_subview: GdHolder::default(),
-            // work finished subview
             work_finished_subview: GdHolder::default(),
-            roll_again_button: GdHolder::default(),
-            close_button: GdHolder::default(),
 
             list: List::default(),
             roll_state: RollState::ItemsSelection,
@@ -143,7 +131,7 @@ impl PanelVirtual for RollView {
             self.work_cancel_button = GdHolder::from_path(base, "WorkCancelButton");
             self.work_cancel_button.ok_mut()?.connect(
                 "button_up".into(),
-                base.callable("on_work_cancel_button_up"),
+                base.callable("close_dialog"),
                 0,
             );
             self.list_name_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/ListNameLabel");
@@ -152,21 +140,8 @@ impl PanelVirtual for RollView {
             self.selection_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
             self.work_assigned_subview = GdHolder::from_path(base, "VBoxContainer/WorkAssignedSubview");
             self.work_assigned_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
-
-            // work finished subview
             self.work_finished_subview = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview");
-            self.roll_again_button = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview/RollAgainButton");
-            self.roll_again_button.ok_mut()?.connect(
-                "button_up".into(),
-                base.callable("on_roll_again_button_up"),
-                0,
-            );
-            self.close_button = GdHolder::from_path(base, "VBoxContainer/WorkFinishedSubview/CloseButton");
-            self.close_button.ok_mut()?.connect(
-                "button_up".into(),
-                base.callable("on_close_button_up"),
-                0,
-            );
+            self.work_finished_subview.ok_mut()?.bind_mut().roll_view = GdHolder::from_gd(base.share());
         }: ArreResult<()> {
             Ok(_) => {}
             Err(e) => log_error(e),

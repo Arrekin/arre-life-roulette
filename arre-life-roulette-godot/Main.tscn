@@ -240,49 +240,26 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Mark as completed"
 
-[node name="WorkFinishedSubview" type="Control" parent="UI/RollView/VBoxContainer"]
+[node name="WorkFinishedSubview" type="RollWorkFinishedSubview" parent="UI/RollView/VBoxContainer"]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="CongratsLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkFinishedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -254.0
-offset_top = 214.0
-offset_right = 278.0
-offset_bottom = 300.0
-grow_horizontal = 2
+layout_mode = 2
+size_flags_vertical = 6
 theme_override_font_sizes/font_size = 60
 text = "Well Done!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RollAgainButton" type="Button" parent="UI/RollView/VBoxContainer/WorkFinishedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -254.0
-offset_top = 306.0
-offset_right = 278.0
-offset_bottom = 410.0
-grow_horizontal = 2
+layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Roll again >>>"
 
 [node name="CloseButton" type="Button" parent="UI/RollView/VBoxContainer/WorkFinishedSubview"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -254.0
-offset_top = 429.0
-offset_right = 278.0
-offset_bottom = 533.0
-grow_horizontal = 2
+layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Close"
 
