@@ -144,26 +144,22 @@ impl PanelVirtual for RollView {
     fn process(&mut self, _delta: f64) {
         match try {
             if let Some(new_requested_state) = self.roll_state_requested.take() {
-                self.roll_state  = match new_requested_state {
+                self.roll_state = new_requested_state;
+                match &self.roll_state {
                     RollState::ItemsSelection => {
                         let mut selection_subview = self.selection_subview.ok_mut()?.bind_mut();
                         selection_subview.set_state(self.list.get_id()?);
                         selection_subview.refresh_display();
-                        RollState::ItemsSelection
                     },
-                    RollState::Rolling(work_items) => {
+                    RollState::Rolling(..) => {
                         self.rolling_subview.ok_mut()?.bind_mut().do_roll_deferred = true;
-                        RollState::Rolling(work_items)
                     },
                     RollState::WorkAssigned{item} => {
                         let mut work_subview = self.work_assigned_subview.ok_mut()?.bind_mut();
                         work_subview.set_state(item.clone());
                         work_subview.refresh_display();
-                        RollState::WorkAssigned{item}
                     }
-                    RollState::WorkFinished(duration) => {
-                        RollState::WorkFinished(duration)
-                    }
+                    RollState::WorkFinished(..) => {}
                 };
                 self.refresh_view();
             };

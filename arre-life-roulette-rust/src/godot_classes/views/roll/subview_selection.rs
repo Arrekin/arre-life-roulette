@@ -12,18 +12,6 @@ use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
 use crate::item::{Item, ItemId};
 use crate::list::{list_items_get, ListId};
 
-#[derive(Clone)]
-struct SelectionItem {
-    item: Item,
-    selected: bool,
-}
-
-impl Into<Content> for SelectionItem {
-    fn into(self) -> Content {
-        Content::Item(self.item)
-    }
-}
-
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
 pub struct RollSelectionSubview {
@@ -42,7 +30,7 @@ pub struct RollSelectionSubview {
 
     // state
     list_id: ListId,
-    items: HashMap<ItemId, SelectionItem>,
+    items: HashMap<ItemId, Item>,
     items_enabled: HashMap<ItemId, bool>,
 }
 
@@ -62,7 +50,7 @@ impl RollSelectionSubview {
             self.items = list_items_get::<Vec<_>>(connection, self.list_id)?
                 .into_iter()
                 .map(|item| {
-                    Ok((item.get_id()?, SelectionItem { item, selected: true, }))
+                    Ok((item.get_id()?, item))
                 }).collect::<ArreResult<_>>()?;
             self.items_enabled = self.items.keys().map(|item_id| (*item_id, true)).collect();
         } {
