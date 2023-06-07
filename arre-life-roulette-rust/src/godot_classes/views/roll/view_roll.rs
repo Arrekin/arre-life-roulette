@@ -13,7 +13,7 @@ use crate::list::{List};
 
 pub enum RollState {
     ItemsSelection,
-    Rolling(Vec<ItemId>),
+    Rolling(Vec<Item>),
     WorkAssigned{item: Item},
     WorkFinished(Duration),
 }
@@ -151,8 +151,8 @@ impl PanelVirtual for RollView {
                         selection_subview.set_state(self.list.get_id()?);
                         selection_subview.refresh_display();
                     },
-                    RollState::Rolling(..) => {
-                        self.rolling_subview.ok_mut()?.bind_mut().do_roll_deferred = true;
+                    RollState::Rolling(eligible_items) => {
+                        self.rolling_subview.ok_mut()?.bind_mut().animate(eligible_items.clone());
                     },
                     RollState::WorkAssigned{item} => {
                         let mut work_subview = self.work_assigned_subview.ok_mut()?.bind_mut();

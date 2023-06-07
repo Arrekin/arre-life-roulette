@@ -13,6 +13,8 @@ pub enum ArreError {
     InstantiateFailed(String, String),
     #[error("[color=red][b]`try_cast()`[/b] failed for [b]`{0}`[/b] at [b]`{1}`[/b][/color]")]
     CastFailed(String, String),
+    #[error("[color=red][b]`create_tween()`[/b] failed for [b]`{0}`[/b] at [b]`{1}`[/b][/color]")]
+    CreateTweenFailed(String, String),
     // Logic errors
     #[error("[color=red]Set of selected items is empty[/color]")]
     ItemsSelectionIsEmpty(),

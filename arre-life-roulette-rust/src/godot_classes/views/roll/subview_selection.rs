@@ -73,10 +73,10 @@ impl RollSelectionSubview {
     fn on_roll_start_button_up(&mut self) {
         match try {
             // make list of enabled items to choose from
-            let work_items = self.items_enabled
+            let work_items = self.items
                 .iter()
-                .filter(|(_, enabled)| **enabled)
-                .map(|(item_id, _)| *item_id)
+                .filter(|(item_id, _)| self.items_enabled[*item_id])
+                .map(|(_, item)| item.clone())
                 .collect::<Vec<_>>();
             self.roll_view.ok_mut()?.bind_mut().roll_state_change_request(RollState::Rolling(work_items));
         } {

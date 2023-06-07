@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=7 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 [ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
+[ext_resource type="PackedScene" uid="uid://bixfoa2ureytr" path="res://Prefabs/ElementCardPrefab.tscn" id="3_6mbjv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
 bg_color = Color(0.117647, 0.262745, 0.262745, 1)
@@ -210,7 +211,25 @@ theme_override_font_sizes/font_size = 70
 text = "Roll!"
 
 [node name="RollingSubview" type="RollRollingSubview" parent="UI/RollView/VBoxContainer"]
-visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/RollView/VBoxContainer/RollingSubview"]
+layout_mode = 2
+theme_override_constants/margin_top = 100
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="RollCard1" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
+layout_mode = 2
+
+[node name="RollCard2" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
+layout_mode = 2
+
+[node name="RollCard3" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
 layout_mode = 2
 
 [node name="WorkAssignedSubview" type="RollWorkAssignedSubview" parent="UI/RollView/VBoxContainer"]
