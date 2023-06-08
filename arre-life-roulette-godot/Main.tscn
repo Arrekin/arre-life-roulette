@@ -1,8 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=6 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 [ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
-[ext_resource type="PackedScene" uid="uid://bixfoa2ureytr" path="res://Prefabs/ElementCardPrefab.tscn" id="3_6mbjv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
 bg_color = Color(0.117647, 0.262745, 0.262745, 1)
@@ -215,22 +214,56 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="UI/RollView/VBoxContainer/RollingSubview"]
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
-theme_override_constants/margin_top = 100
+mouse_filter = 2
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
 
 [node name="HBoxContainer" type="HBoxContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer"]
 layout_mode = 2
+alignment = 1
+
+[node name="ScrollContainer1" type="ScrollContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer"]
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer/ScrollContainer1"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 50
 alignment = 1
 
-[node name="RollCard1" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
+[node name="ScrollContainer2" type="ScrollContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
 
-[node name="RollCard2" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer/ScrollContainer2"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 50
+alignment = 1
 
-[node name="RollCard3" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer" instance=ExtResource("3_6mbjv")]
+[node name="ScrollContainer3" type="ScrollContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/RollView/VBoxContainer/RollingSubview/MarginContainer/HBoxContainer/ScrollContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 50
+alignment = 1
 
 [node name="WorkAssignedSubview" type="RollWorkAssignedSubview" parent="UI/RollView/VBoxContainer"]
 visible = false

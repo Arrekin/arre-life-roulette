@@ -1,15 +1,18 @@
-use godot::engine::{VBoxContainer, VBoxContainerVirtual};
+use godot::engine::{ScrollContainer, VBoxContainer, VBoxContainerVirtual};
+use godot::engine::node::InternalMode;
 use godot::prelude::*;
+use rand::prelude::SliceRandom;
 use rand::Rng;
 use crate::errors::{ArreResult, ArreError, BoxedError};
 use crate::godot_classes::element_card::ElementCard;
+use crate::godot_classes::resources::ELEMENT_CARD_PREFAB;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
 use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
 use crate::item::{Item};
 
 const ROLL_ANIMATION_DURATION: f64 = 10.; // seconds
-const ROLL_FLIP_TIME: f64 = 0.2;
+const ROLL_CARDS_ROWS: usize = 100;
 
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
@@ -17,8 +20,11 @@ pub struct RollRollingSubview {
     #[base]
     base: Base<VBoxContainer>,
 
+    // cached sub-scenes
+    element_card_prefab: Gd<PackedScene>,
+
     // cached internal UI elements
-    pub roll_cards: [GdHolder<ElementCard>; 3],
+    pub scrolls: [GdHolder<ScrollContainer>; 3],
 
     // cached external UI elements
     pub roll_view: GdHolder<RollView>,
@@ -27,57 +33,63 @@ pub struct RollRollingSubview {
     rng: rand::rngs::ThreadRng,
     is_animating: bool,
     animation_time: f64, // total time of the ongoing animation
-    reduction_time: f64, // remove item from pool every `reduction_time` seconds
-    time_till_reduction: f64, // counter till next reduction
-    time_till_flip: [f64; 3], // counter till next card flip
-    items_pool: Vec<Item>,
+    chosen_item: Item,
 
 }
 
 #[godot_api]
 impl RollRollingSubview {
 
-    pub fn animate(&mut self, eligible_items: Vec<Item>) {
+    pub fn animate(&mut self, mut eligible_items: Vec<Item>) -> ArreResult<()> {
         self.is_animating = true;
         self.animation_time = 0.;
-        self.reduction_time = ROLL_ANIMATION_DURATION / eligible_items.len() as f64;
-        self.time_till_reduction = self.reduction_time;
-        self.time_till_flip = [ROLL_FLIP_TIME; 3];
-        self.items_pool = eligible_items;
+
+        // Animation takes ROLL_ANIMATION_DURATION seconds, during which we display ROLL_CARDS_ROWS cards.
+        // Eligible cards are slowly reduced and so later rows must respect this reduction.
+        let mut cards = [Array::new(), Array::new(), Array::new()];
+        for scroll_idx in 0..3 {
+            let scroll = self.scrolls[scroll_idx].ok_mut()?;
+            let vbox = GdHolder::<VBoxContainer>::from_path(&self.base, format!("{}/VBoxContainer", scroll.get_path()));
+            cards[scroll_idx] = vbox.ok()?.get_children(false);
+        }
+        for row in 0..ROLL_CARDS_ROWS {
+            if eligible_items.len() > ROLL_CARDS_ROWS - row {
+                eligible_items.remove(self.rng.gen_range(0..eligible_items.len()));
+            } else if row == ROLL_CARDS_ROWS - 1 && eligible_items.len() > 1 {
+                while eligible_items.len() > 1 {
+                    eligible_items.remove(self.rng.gen_range(0..eligible_items.len()));
+                }
+            }
+            for scroll_idx in 0..3 {
+                let mut card = GdHolder::<ElementCard>::from_gd(cards[scroll_idx].get(row));
+                let mut card = card.ok_mut()?.bind_mut();
+                let card_item = eligible_items.choose(&mut self.rng).ok_or(ArreError::UnexpectedNone("RollRollingSubview::animate".to_string()))?;
+                card.set_content(card_item.clone());
+            }
+        }
+        self.chosen_item = eligible_items.pop().ok_or(ArreError::UnexpectedNone("RollRollingSubview::animate".to_string()))?;
+        Ok(())
     }
 
     fn progress_animation(&mut self, delta: f64) -> ArreResult<()> {
         self.animation_time += delta;
-        self.time_till_reduction -= delta;
-        self.time_till_flip.iter_mut().for_each(|e| *e -= delta);
-        if self.time_till_reduction < 0. {
-            self.time_till_reduction = self.reduction_time;
-            self.items_pool.remove(self.rng.gen_range(0..self.items_pool.len()));
-        }
-        if self.items_pool.len() == 1 {
+        if self.animation_time >= ROLL_ANIMATION_DURATION {
             self.is_animating = false;
-            let item = self.items_pool.pop().unwrap();
-
             let mut roll_view = self.roll_view.ok_mut()?.bind_mut();
-            roll_view.roll_state_change_request(RollState::WorkAssigned{item});
+            roll_view.roll_state_change_request(RollState::WorkAssigned{item: self.chosen_item.clone()});
         }
-        for card_idx in 0..3 {
-            if self.time_till_flip[card_idx] < 0. {
-                self.time_till_flip[card_idx] = ROLL_FLIP_TIME + self.rng.gen::<f64>() / 10.;
+        for scroll_idx in 0..3 {
+            let scroll = self.scrolls[scroll_idx].ok_mut()?;
+            let mut vbox = GdHolder::<VBoxContainer>::from_path(&self.base, format!("{}/VBoxContainer", scroll.get_path()));
+            let vbox = vbox.ok_mut()?;
 
-                let card = self.roll_cards[card_idx].ok_mut()?;
-                {
-                    let mut card = card.bind_mut();
-                    card.set_content(self.items_pool[self.rng.gen_range(0..self.items_pool.len())].clone());
-                }
-                let mut twin = self.base
-                    .create_tween()
-                    .ok_or(ArreError::CreateTweenFailed("ElementCard".into(), "RollRollingSubview::progress_animation".into()))?;
-                twin.tween_property(card.share().upcast(), "modulate".into(), Color::from_rgba(1.0, 1.0, 0.0, 0.8).to_variant(), ROLL_FLIP_TIME / 1.25);
-                twin.tween_property(card.share().upcast(), "modulate".into(), Color::WHITE.to_variant(), 0.);
-            }
+            // Apply a power to time before logarithm to slow down the growth rate
+            let adjusted_time = (self.animation_time / ROLL_ANIMATION_DURATION).powf(0.20) * ROLL_ANIMATION_DURATION;
+            // We use a scaling factor to make sure we reach max_position when time is max_time.
+            let scale_factor = (vbox.get_size().y as f64 / ROLL_ANIMATION_DURATION.log10()).max(0.);
+            let new_scroll_position = scale_factor * adjusted_time.log10();
+            scroll.set_v_scroll(new_scroll_position.round() as i64);
         }
-
         Ok(())
     }
 }
@@ -88,8 +100,10 @@ impl VBoxContainerVirtual for RollRollingSubview {
         Self {
             base,
 
+            element_card_prefab: load(ELEMENT_CARD_PREFAB),
+
             // cached internal UI elements
-            roll_cards: [GdHolder::default(), GdHolder::default(), GdHolder::default()],
+            scrolls: [GdHolder::default(), GdHolder::default(), GdHolder::default()],
 
             // cached external UI elements
             roll_view: GdHolder::default(),
@@ -98,21 +112,30 @@ impl VBoxContainerVirtual for RollRollingSubview {
             rng: rand::thread_rng(),
             is_animating: false,
             animation_time: 0.,
-            reduction_time: 0.,
-            time_till_reduction: 0.,
-            time_till_flip: [0., 0., 0.],
-            items_pool: Vec::new(),
+            chosen_item: Item::default(),
         }
     }
     fn ready(&mut self) {
         match try {
             let base = &self.base;
             // cached internal UI elements
-            self.roll_cards = [
-                GdHolder::from_path(base, "MarginContainer/HBoxContainer/RollCard1"),
-                GdHolder::from_path(base, "MarginContainer/HBoxContainer/RollCard2"),
-                GdHolder::from_path(base, "MarginContainer/HBoxContainer/RollCard3"),
+            self.scrolls = [
+                GdHolder::from_path(base, "MarginContainer/HBoxContainer/ScrollContainer1"),
+                GdHolder::from_path(base, "MarginContainer/HBoxContainer/ScrollContainer2"),
+                GdHolder::from_path(base, "MarginContainer/HBoxContainer/ScrollContainer3"),
             ];
+            for scroll in self.scrolls.iter_mut() {
+                let scroll = scroll.ok_mut()?;
+                let mut vbox = GdHolder::<VBoxContainer>::from_path(&self.base, format!("{}/VBoxContainer", scroll.get_path()));
+                let vbox = vbox.ok_mut()?;
+                for _ in 0..ROLL_CARDS_ROWS {
+                    let new_card = self.element_card_prefab
+                        .try_instantiate_as::<ElementCard>()
+                        .ok_or(ArreError::InstantiateFailed("ElementCard".into(), "RollRollingSubview::ready".into()))?;
+                    vbox.add_child(new_card.share().upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
+                }
+
+            }
             // cached external UI elements
             // self.roll_view is set from RollView::ready()
         } {
