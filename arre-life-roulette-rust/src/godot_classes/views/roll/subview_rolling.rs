@@ -1,15 +1,12 @@
-use godot::engine::{Tween, VBoxContainer, VBoxContainerVirtual};
+use godot::engine::{VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
-use rand::prelude::IteratorRandom;
 use rand::Rng;
 use crate::errors::{ArreResult, ArreError, BoxedError};
 use crate::godot_classes::element_card::ElementCard;
-use crate::godot_classes::singletons::globals::Globals;
-use crate::godot_classes::utils::get_singleton;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
 use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
-use crate::item::{Item, item_get};
+use crate::item::{Item};
 
 const ROLL_ANIMATION_DURATION: f64 = 10.; // seconds
 const ROLL_FLIP_TIME: f64 = 0.2;
@@ -33,7 +30,6 @@ pub struct RollRollingSubview {
     reduction_time: f64, // remove item from pool every `reduction_time` seconds
     time_till_reduction: f64, // counter till next reduction
     time_till_flip: [f64; 3], // counter till next card flip
-   // card_flip_tween: [Gd<Tween>; 3],
     items_pool: Vec<Item>,
 
 }
@@ -69,7 +65,7 @@ impl RollRollingSubview {
             if self.time_till_flip[card_idx] < 0. {
                 self.time_till_flip[card_idx] = ROLL_FLIP_TIME + self.rng.gen::<f64>() / 10.;
 
-                let mut card = self.roll_cards[card_idx].ok_mut()?;
+                let card = self.roll_cards[card_idx].ok_mut()?;
                 {
                     let mut card = card.bind_mut();
                     card.set_content(self.items_pool[self.rng.gen_range(0..self.items_pool.len())].clone());
@@ -105,7 +101,6 @@ impl VBoxContainerVirtual for RollRollingSubview {
             reduction_time: 0.,
             time_till_reduction: 0.,
             time_till_flip: [0., 0., 0.],
-            //card_flip_tween: [Tween::new(), Tween::new(), Tween::new()],
             items_pool: Vec::new(),
         }
     }

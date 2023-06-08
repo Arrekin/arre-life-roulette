@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use chrono::Utc;
 use rusqlite::{Connection, Result, Row};
@@ -112,11 +113,11 @@ pub fn list_delete(conn: &Connection, id: ListId) -> ArreResult<()> {
 pub fn list_items_add(
     conn: &Connection,
     list_id: ListId,
-    items: impl IntoIterator<Item=ItemId>
+    items: impl IntoIterator<Item=impl Borrow<ItemId>>
 ) -> ArreResult<()> {
     let mut stmt = conn.prepare("INSERT INTO item_list_map (list_id, item_id) VALUES (?1, ?2)")?;
     for item_id in items {
-        stmt.execute([*list_id, *item_id])?;
+        stmt.execute([*list_id, **item_id.borrow()])?;
     }
     Ok(())
 }
