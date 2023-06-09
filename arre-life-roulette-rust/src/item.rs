@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::hash::{Hash, Hasher};
 use chrono::{Utc};
 use rusqlite::{Connection, Result, Row};
@@ -11,10 +12,6 @@ pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl A
     conn.execute("
         INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, false, false);
         ", (dt.clone(), dt.clone(), name, description),
-    )?;
-    conn.execute("
-        INSERT INTO item_stats (item_id, created_date, updated_date) VALUES (last_insert_rowid(), ?1, ?2);
-        ", (dt.clone(), dt.clone()),
     )?;
     let mut stmt = conn.prepare("
         SELECT
@@ -32,10 +29,6 @@ pub fn item_persist(conn: &Connection, item: &mut Item) -> ArreResult<()> {
     conn.execute("
         INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, ?5, ?6);
         ", (dt.clone(), dt.clone(), &item.name, &item.description, item.is_suspended, item.is_finished),
-    )?;
-    conn.execute("
-        INSERT INTO item_stats (item_id, created_date, updated_date) VALUES (last_insert_rowid(), ?1, ?2);
-        ", (dt.clone(), dt.clone()),
     )?;
     let mut stmt = conn.prepare("
         SELECT
@@ -112,16 +105,12 @@ where C: FromIterator<Item>
 pub fn item_delete(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<()> {
     let id = id.into();
     conn.execute("DELETE FROM items WHERE item_id = ?1;", (id,))?;
-    conn.execute("DELETE FROM item_stats WHERE item_id = ?1;", (id,))?;
     Ok(())
 }
 
-pub fn items_to_ids<'a, I, O>(items: I) -> ArreResult<O>
-where
-    I: Iterator<Item = &'a Item>,
-    O: FromIterator<ItemId>,
+pub fn items_to_ids<I: Iterator<Item = impl Borrow<Item>>, O: FromIterator<ItemId>>(items: I) -> ArreResult<O>
 {
-    items.map(|item| item.get_id()).collect::<ArreResult<O>>()
+    items.map(|item| item.borrow().get_id()).collect::<ArreResult<O>>()
 }
 
 pub type ItemId = Id<Item>;
@@ -221,7 +210,7 @@ mod tests {
         // Delete the item and check that there is no items in the table
         item_delete(&conn, item_id)?;
         tf.assert_item_exist(item_id, false)?;
-        tf.assert_items_number(0)?;
+        tf.assert_table_count("items", 0)?;
         Ok(())
     }
 

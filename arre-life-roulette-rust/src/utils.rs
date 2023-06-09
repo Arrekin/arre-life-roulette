@@ -30,6 +30,11 @@ impl<T> From<i64> for Id<T> {
         Id { id: value, phantom: PhantomData }
     }
 }
+impl<T> Into<i64> for Id<T> {
+    fn into(self) -> i64 {
+        self.id
+    }
+}
 
 impl<T> ToSql for Id<T> {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput> {

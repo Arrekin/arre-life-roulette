@@ -288,14 +288,14 @@ mod tests {
         let list_id = list.get_id()?;
         let start_items = tf.create_items(5)?;
         let first_item_id = start_items[0].get_id()?;
-        tf.assert_items_number(5)?;
+        tf.assert_table_count("items", 5)?;
         list_items_add(
             &conn, list_id,
             items_to_ids::<_, Vec<_>>(start_items.iter())?,
         )?;
-        tf.assert_items_number_in_list(list_id, 5);
+        tf.assert_items_number_in_list(list_id, 5)?;
         list_items_delete(&conn, list_id, std::iter::once(first_item_id))?;
-        tf.assert_items_number_in_list(list_id, 4);
+        tf.assert_items_number_in_list(list_id, 4)?;
         tf.assert_item_in_list(first_item_id, list_id, false)?;
         Ok(())
     }
@@ -318,12 +318,12 @@ mod tests {
         let list = list_create(&conn, "Glorious List", "")?;
         let list_id = list.get_id()?;
         let mut list_items = tf.create_items(3)?;
-        tf.assert_items_number_in_list(list_id, 0);
+        tf.assert_items_number_in_list(list_id, 0)?;
         list_items_update(
             &conn, list_id,
             items_to_ids::<_, Vec<_>>(list_items.iter())?
         )?;
-        tf.assert_items_number_in_list(list_id, 3);
+        tf.assert_items_number_in_list(list_id, 3)?;
 
         // Create another 3 items and add them to the list while removing 2 of the old ones.
         // The final amount after the save should be 4
@@ -331,7 +331,7 @@ mod tests {
         list_items.pop();
         list_items.extend(tf.create_items(3)?);
         list_items_update(&conn, list_id, items_to_ids::<_, Vec<_>>(list_items.iter())?)?;
-        tf.assert_items_number_in_list(list_id, 4);
+        tf.assert_items_number_in_list(list_id, 4)?;
         Ok(())
     }
 

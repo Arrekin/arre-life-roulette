@@ -65,8 +65,7 @@ mod tests {
     #[rstest]
     fn item_creates_removes_stats(conn: Connection) -> ArreResult<()> {
         let tf = TestFactory::new(&conn);
-        let item = item_create(&conn, "Name", "Description")?;
-        let item_id = item.get_id()?;
+        let item_id = item_create(&conn, "Name", "Description")?.get_id()?;
         let stats = item_stats_get(&conn, item_id)?;
         assert_eq!( stats.times_worked, 0, "times_worked of fresh Item should be 0");
         assert_eq!( stats.time_spent.num_seconds(), 0, "time_spent of fresh Item should be 0");
@@ -74,7 +73,7 @@ mod tests {
         // Delete the item and check that stats were deleted as well
         item_delete(&conn, item_id)?;
         tf.assert_item_exist(item_id, false)?;
-        tf.assert_items_number(0)?;
+        tf.assert_table_count("item_stats", 0)?;
         assert!(item_stats_get(&conn, item_id).is_err(), "Item stats should have been deleted");
         Ok(())
     }
@@ -95,12 +94,12 @@ mod tests {
     fn update_item_stats(
         conn: Connection,
     ) -> ArreResult<()> {
-        let item = item_create(&conn, "Name", "Description")?;
-        let mut stats = item_stats_get(&conn, item.get_id()?)?;
+        let item_id = item_create(&conn, "Name", "Description")?.get_id()?;
+        let mut stats = item_stats_get(&conn, item_id)?;
         stats.times_worked = 5;
         stats.time_spent = Duration::seconds(10);
         item_stats_update(&conn, &stats)?;
-        let stats = item_stats_get(&conn, item.get_id()?)?;
+        let stats = item_stats_get(&conn, item_id)?;
         assert_eq!(stats.times_worked, 5);
         assert_eq!(stats.time_spent.num_seconds(), 10);
         Ok(())
