@@ -114,3 +114,10 @@ impl <Tz: TimeZone> Deref for ArreDateTime<Tz> {
     }
 }
 
+pub fn format_duration(duration: chrono::Duration) -> String {
+    let duration = duration.num_seconds();
+    let seconds = duration % 60;
+    let minutes = (duration / 60) % 60;
+    let hours = (duration / 60) / 60;
+    format!("{:0>2}h {:0>2}m {:0>2}s", hours, minutes, seconds)
+}

@@ -156,8 +156,7 @@ impl PanelVirtual for RollView {
                     },
                     RollState::WorkAssigned{item} => {
                         let mut work_subview = self.work_assigned_subview.ok_mut()?.bind_mut();
-                        work_subview.set_state(item.clone());
-                        work_subview.refresh_display();
+                        work_subview.set_state(item.clone())?;
                     }
                     RollState::WorkFinished(..) => {}
                 };

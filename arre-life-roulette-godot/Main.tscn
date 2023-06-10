@@ -210,6 +210,7 @@ theme_override_font_sizes/font_size = 70
 text = "Roll!"
 
 [node name="RollingSubview" type="RollRollingSubview" parent="UI/RollView/VBoxContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -266,24 +267,35 @@ theme_override_constants/separation = 50
 alignment = 1
 
 [node name="WorkAssignedSubview" type="RollWorkAssignedSubview" parent="UI/RollView/VBoxContainer"]
-visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ItemNameLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemNameLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
 text = "Rolled item: ############"
 horizontal_alignment = 1
 
-[node name="ItemDescriptionLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
+[node name="ItemDescriptionLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
 layout_mode = 2
 text = "<<< Item description goes here >>>"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="MotivatorLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
+[node name="SessionTimeLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 100
+text = "HH:MM:SS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MotivatorLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 6
 theme_override_font_sizes/font_size = 20
@@ -291,7 +303,20 @@ text = "Work on your item and come back once you are done!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WorkFinishButton" type="Button" parent="UI/RollView/VBoxContainer/WorkAssignedSubview"]
+[node name="ElapsedTimeLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
+layout_mode = 2
+text = "00h 00m 43s"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomMarginContainer" type="MarginContainer" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 10
+
+[node name="WorkFinishButton" type="Button" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer/BottomMarginContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 70
 text = "Mark as completed"
