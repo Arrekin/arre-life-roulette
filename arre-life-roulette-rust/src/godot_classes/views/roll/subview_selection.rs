@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use bus::BusReader;
 use godot::engine::{Button, VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::element_card::{Content, ElementCard};
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::utils::{GdHolder};
 use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
 use crate::item::{Item, ItemId};
 use crate::list::{list_items_get, ListId};
@@ -44,8 +44,7 @@ impl RollSelectionSubview {
 
     pub fn refresh_state(&mut self) {
         match try {
-            let globals = get_singleton::<Globals>("Globals");
-            let connection = &globals.bind().connection;
+            let connection = &*DB.ok()?;
 
             self.items = list_items_get::<Vec<_>>(connection, self.list_id)?
                 .into_iter()

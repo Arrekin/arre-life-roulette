@@ -1,10 +1,10 @@
 use chrono::{DateTime, Duration, Utc};
 use godot::engine::{Button, Label, VBoxContainer, VBoxContainerVirtual};
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::utils::{GdHolder};
 use crate::godot_classes::views::roll::view_roll::{RollState, RollView};
 use crate::item::{Item};
 use crate::item_details::{item_details_get, ItemDetails};
@@ -41,8 +41,7 @@ impl RollWorkAssignedSubview {
         self.work_item = work_item;
         self.work_started_timestamp = Utc::now();
 
-        let globals = get_singleton::<Globals>("Globals");
-        let connection = &globals.bind().connection;
+        let connection = &*DB.ok()?;
         self.work_item_details = item_details_get(connection, self.work_item.get_id()?)?;
         self.refresh_display()?;
         Ok(())
@@ -75,8 +74,7 @@ impl RollWorkAssignedSubview {
         match try {
             let time_worked = Utc::now() - self.work_started_timestamp;
             // Update stats in db
-            let globals = get_singleton::<Globals>("Globals");
-            let connection = &globals.bind().connection;
+            let connection = &*DB.ok()?;
             let mut item_stats = item_stats_get(connection, self.work_item.get_id()?)?;
             item_stats.times_worked += 1;
             item_stats.time_spent = item_stats.time_spent + time_worked;
@@ -137,6 +135,7 @@ impl VBoxContainerVirtual for RollWorkAssignedSubview {
 
     fn process(&mut self, _delta: f64) {
         match try {
+            if godot::engine::Engine::singleton().is_editor_hint() { return; }
             if self.base.is_visible() {
                 self.refresh_time_display()?;
             }

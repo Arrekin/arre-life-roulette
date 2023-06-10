@@ -23,4 +23,8 @@ pub enum ArreError {
     // Core errors
     #[error("[color=red] Attempt to operate on non persisted item [/color]")]
     ItemNotPersisted(),
+    #[error("[color=red]Database connection not established[/color]")]
+    DatabaseConnectionNotEstablished(),
+    #[error("[color=red]Database connection mutex lock failed[/color]")]
+    DatabaseConnectionMutexFailed(),
 }

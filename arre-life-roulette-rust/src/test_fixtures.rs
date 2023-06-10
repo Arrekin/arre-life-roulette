@@ -1,7 +1,7 @@
 use rusqlite::{Connection};
 use rstest::*;
 
-use crate::db_init::initialize_database;
+use crate::db::initialize_database;
 use crate::item::{Item, item_create, ItemId};
 use crate::item_tag::{ItemTagId};
 use crate::list::{List, list_create, ListId};

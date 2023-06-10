@@ -291,7 +291,7 @@ autowrap_mode = 3
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 100
-text = "HH:MM:SS"
+text = "HHh MMm SSs"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -305,7 +305,7 @@ vertical_alignment = 1
 
 [node name="ElapsedTimeLabel" type="Label" parent="UI/RollView/VBoxContainer/WorkAssignedSubview/VBoxContainer"]
 layout_mode = 2
-text = "00h 00m 43s"
+text = "HHh MMm SSs"
 horizontal_alignment = 1
 vertical_alignment = 1
 

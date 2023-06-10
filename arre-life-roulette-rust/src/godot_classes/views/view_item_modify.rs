@@ -1,9 +1,9 @@
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{BoxedError};
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::utils::{GdHolder};
 use crate::item::{Item, item_persist, item_update};
 
 const UI_TEXT_CREATE: &str = "Create Item";
@@ -43,8 +43,7 @@ impl ItemModifyView {
             let new_name = self.name_line_edit.ok()?.get_text().to_string();
             let new_description = self.description_text_edit.ok()?.get_text().to_string();
 
-            let globals = get_singleton::<Globals>("Globals");
-            let connection = &globals.bind().connection;
+            let connection = &*DB.ok()?;
 
             self.item.name = new_name;
             self.item.description = new_description;

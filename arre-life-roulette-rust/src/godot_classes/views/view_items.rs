@@ -1,10 +1,10 @@
 use bus::BusReader;
 use godot::engine::{Control, ControlVirtual, Button, LineEdit};
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
 use crate::godot_classes::element_card::{Content, ElementCard};
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
@@ -75,8 +75,7 @@ impl ItemsView {
     #[func]
     fn refresh_state(&mut self) {
         match try {
-            let globals = get_singleton::<Globals>("Globals");
-            let connection = &globals.bind().connection;
+            let connection = &*DB.ok()?;
             match &self.search_term {
                 Some(search_term) => {
                     self.items = item_search(connection, search_term)?;
@@ -106,8 +105,7 @@ impl ItemsView {
         {
             let card = card.ok_mut()?.bind();
             if let Content::Item(item) = &card.content {
-                let globals = get_singleton::<Globals>("Globals");
-                let connection = &globals.bind().connection;
+                let connection = &*DB.ok()?;
 
                 let mut view = self.item_stats_view.ok_mut()?.bind_mut();
                 view.item_stats = item_stats_get(connection, item.get_id()?)?;

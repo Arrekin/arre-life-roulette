@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use bus::BusReader;
 use godot::engine::{Panel, PanelVirtual, LineEdit, TextEdit, Button, Label};
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
-use crate::godot_classes::singletons::globals::{Globals};
 use crate::godot_classes::element_card::{ElementCard, Content};
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::utils::{GdHolder, get_singleton};
+use crate::godot_classes::utils::{GdHolder};
 use crate::item::{Item, item_get_all, item_search, items_to_ids};
 use crate::list::{List, list_create, list_items_get, list_items_get_complement, list_items_update, list_update};
 
@@ -79,8 +79,7 @@ impl ListModifyView {
             let new_name = self.name_line_edit.ok()?.get_text().to_string();
             let new_description = self.description_text_edit.ok()?.get_text().to_string();
 
-            let globals = get_singleton::<Globals>("Globals");
-            let connection = &globals.bind().connection;
+            let connection = &*DB.ok()?;
 
             match self.mode {
                 Mode::Add => {
@@ -173,8 +172,7 @@ impl ListModifyView {
     }
 
     fn refresh_state(&mut self) {
-        let globals = get_singleton::<Globals>("Globals");
-        let connection = &globals.bind().connection;
+        let connection = &*DB.ok().unwrap();
         match self.mode {
             Mode::Add => {
                 self.items_out = item_get_all(connection).unwrap();
@@ -189,8 +187,7 @@ impl ListModifyView {
     }
 
     fn get_display_items_in(&self) -> ArreResult<Vec<Item>> {
-        let globals = get_singleton::<Globals>("Globals");
-        let connection = &globals.bind().connection;
+        let connection = &*DB.ok()?;
 
         match &self.search_term {
             None => {
@@ -204,8 +201,7 @@ impl ListModifyView {
     }
 
     fn get_display_items_out(&self) -> ArreResult<Vec<Item>> {
-        let globals = get_singleton::<Globals>("Globals");
-        let connection = &globals.bind().connection;
+        let connection = &*DB.ok()?;
 
         match &self.search_term {
             None => {

@@ -1,11 +1,41 @@
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use chrono::Duration;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use rusqlite::{Connection, Result};
-use crate::errors::ArreResult;
+use crate::errors::{ArreError, ArreResult};
 use crate::item::{item_create};
 use crate::item_stats::{item_stats_get, item_stats_update};
 use crate::list::{list_create, list_items_add};
+
+pub struct DbConnectionWrapper(pub OnceLock<Mutex<Connection>>);
+impl DbConnectionWrapper {
+    pub const fn new() -> Self {
+        Self(OnceLock::new())
+    }
+
+    pub fn init(&self, conn: Connection) {
+        self.0.set(Mutex::new(conn)).unwrap();
+    }
+
+    pub fn ok(&self) -> ArreResult<MutexGuard<Connection>> {
+        self.0
+            .get()
+            .ok_or(ArreError::DatabaseConnectionNotEstablished())?
+            .lock()
+            .map_err(|_| ArreError::DatabaseConnectionMutexFailed().into())
+    }
+
+}
+
+pub static DB: DbConnectionWrapper = DbConnectionWrapper::new();
+
+pub fn set_db_connection() {
+    let connection = Connection::open_in_memory().unwrap();
+    initialize_database(&connection).unwrap();
+    initialized_demo_content_dev(&connection).unwrap();
+    DB.init(connection);
+}
 
 pub fn initialize_database(conn: &Connection) -> Result<()> {
     initialize_items_table(conn)?;
