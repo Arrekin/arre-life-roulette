@@ -122,7 +122,7 @@ impl ItemsView {
             let card = card.ok_mut()?.bind();
             if let Content::Item(item) = &card.content {
                 let mut view = self.item_modify_view.ok_mut()?.bind_mut();
-                view.set_mode_edit(item.clone());
+                view.set_mode_edit(item.clone())?;
                 view.show();
             }
         }

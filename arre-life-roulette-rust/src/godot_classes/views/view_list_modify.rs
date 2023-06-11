@@ -79,23 +79,25 @@ impl ListModifyView {
             let new_name = self.name_line_edit.ok()?.get_text().to_string();
             let new_description = self.description_text_edit.ok()?.get_text().to_string();
 
-            let connection = &*DB.ok()?;
-
-            match self.mode {
-                Mode::Add => {
-                    let new_list = list_create(connection, new_name, new_description)?;
-                    let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
-                    list_items_update(connection, new_list.get_id()?, items)?;
-                    self.set_mode_edit(new_list);
-                }
-                Mode::Edit => {
-                    self.list.name = new_name;
-                    self.list.description = new_description;
-                    list_update(connection, &self.list)?;
-                    let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
-                    list_items_update(connection, self.list.get_id()?, items)?;
+            {
+                let connection = &*DB.ok()?;
+                match self.mode {
+                    Mode::Add => {
+                        let new_list = list_create(connection, new_name, new_description)?;
+                        let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
+                        list_items_update(connection, new_list.get_id()?, items)?;
+                        self.set_mode_edit(new_list);
+                    }
+                    Mode::Edit => {
+                        self.list.name = new_name;
+                        self.list.description = new_description;
+                        list_update(connection, &self.list)?;
+                        let items = items_to_ids::<_, Vec<_>>(self.items_in.iter())?;
+                        list_items_update(connection, self.list.get_id()?, items)?;
+                    }
                 }
             }
+
             self.refresh_state();
             self.refresh_display();
         } {
@@ -172,17 +174,22 @@ impl ListModifyView {
     }
 
     fn refresh_state(&mut self) {
-        let connection = &*DB.ok().unwrap();
-        match self.mode {
-            Mode::Add => {
-                self.items_out = item_get_all(connection).unwrap();
-                self.items_in = HashSet::new();
-            },
-            Mode::Edit => {
-                let list_id = self.list.get_id().unwrap();
-                self.items_out = list_items_get_complement(connection, list_id).unwrap();
-                self.items_in = list_items_get(connection, list_id).unwrap();
+        match try {
+            let connection = &*DB.ok()?;
+            match self.mode {
+                Mode::Add => {
+                    self.items_out = item_get_all(connection)?;
+                    self.items_in = HashSet::new();
+                },
+                Mode::Edit => {
+                    let list_id = self.list.get_id()?;
+                    self.items_out = list_items_get_complement(connection, list_id)?;
+                    self.items_in = list_items_get(connection, list_id)?;
+                }
             }
+        } {
+            Ok(_) => {}
+            Err::<_, BoxedError>(e) => log_error(e)
         }
     }
 
