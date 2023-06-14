@@ -1,6 +1,6 @@
 use chrono::{Duration};
 use rusqlite::{Connection, Result, Row};
-use crate::errors::{ArreResult};
+use crate::errors::{ArreError, ArreResult};
 use crate::item::ItemId;
 
 pub fn item_details_update(conn: &Connection, stats: &ItemDetails) -> ArreResult<()> {
@@ -8,7 +8,7 @@ pub fn item_details_update(conn: &Connection, stats: &ItemDetails) -> ArreResult
         UPDATE item_details
         SET session_duration = ?2
         WHERE item_id = ?1
-    ", (stats.id, stats.session_duration.map(|sd| sd.num_seconds())),
+    ", (stats.get_id()?, stats.session_duration.map(|sd| sd.num_seconds())),
     )?;
     Ok(())
 }
@@ -28,23 +28,27 @@ pub fn item_details_get(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ItemDetails {
-    pub id: ItemId,
+    pub id: Option<ItemId>, // None indicates it's not persisted
     pub session_duration: Option<Duration>, // in seconds
 }
 
 impl ItemDetails {
     pub fn from_row(row: &Row) -> Result<ItemDetails> {
         Ok(ItemDetails {
-            id: row.get(0)?,
+            id: Some(row.get(0)?),
             session_duration: row.get::<_, Option<i64>>(1)?.map(Duration::seconds),
         })
+    }
+
+    pub fn get_id(&self) -> ArreResult<ItemId> {
+        self.id.ok_or(ArreError::ItemNotPersisted().into())
     }
 }
 
 impl Default for ItemDetails {
     fn default() -> Self {
         ItemDetails {
-            id: 0.into(),
+            id: None,
             session_duration: None,
         }
     }
@@ -98,5 +102,12 @@ mod tests {
         let details = item_details_get(&conn, item_id)?;
         assert_eq!(details.session_duration, session_duration);
         Ok(())
+    }
+
+    #[rstest]
+    fn update_on_default_fails(conn: Connection) {
+        let item_details = Default::default();
+        let result = item_details_update(&conn, &item_details);
+        assert!(result.is_err(), "Update on default should fail");
     }
 }

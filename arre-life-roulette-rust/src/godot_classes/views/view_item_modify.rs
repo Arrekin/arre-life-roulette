@@ -59,10 +59,7 @@ impl ItemModifyView {
                 Mode::Add => {
                     self.mode = Mode::Edit;
                     item_persist(connection, &mut self.item)?;
-                    // TODO: Danger, if we forgot line like that we will mess up data.
-                    // TODO: This is not suitable in the long run.
-                    // TODO: Reconsider how to handle persisted/not-persisted objects
-                    self.item_details.id = self.item.get_id()?;
+                    self.item_details.id = self.item.id;
                     item_details_update(connection, &self.item_details)?;
                 },
                 Mode::Edit => {

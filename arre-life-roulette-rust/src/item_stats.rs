@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use rusqlite::{Connection, Result, Row};
-use crate::errors::{ArreResult};
+use crate::errors::{ArreError, ArreResult};
 use crate::item::ItemId;
 
 pub fn item_stats_update(conn: &Connection, stats: &ItemStats) -> ArreResult<()> {
@@ -8,7 +8,7 @@ pub fn item_stats_update(conn: &Connection, stats: &ItemStats) -> ArreResult<()>
         UPDATE item_stats
         SET updated_date = ?1, times_worked = ?2, time_spent = ?3
         WHERE item_id = ?4
-    ", (Utc::now().to_string(), stats.times_worked, stats.time_spent.num_seconds(), stats.id),
+    ", (Utc::now().to_string(), stats.times_worked, stats.time_spent.num_seconds(), stats.get_id()?),
     )?;
     Ok(())
 }
@@ -28,7 +28,7 @@ pub fn item_stats_get(conn: &Connection, id: impl Into<ItemId>) -> ArreResult<It
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ItemStats {
-    pub id: ItemId,
+    pub id: Option<ItemId>, // None indicates it's not persisted
     pub times_worked: usize,
     pub time_spent: Duration,
 }
@@ -36,10 +36,14 @@ pub struct ItemStats {
 impl ItemStats {
     pub fn from_row(row: &Row) -> Result<ItemStats> {
         Ok(ItemStats {
-            id: row.get(0)?,
+            id: Some(row.get(0)?),
             times_worked: row.get(1)?,
             time_spent: Duration::seconds(row.get(2)?),
         })
+    }
+
+    pub fn get_id(&self) -> ArreResult<ItemId> {
+        self.id.ok_or(ArreError::ItemNotPersisted().into())
     }
 }
 
@@ -47,7 +51,7 @@ impl ItemStats {
 impl Default for ItemStats {
     fn default() -> Self {
         ItemStats {
-            id: 0.into(),
+            id: None,
             times_worked: 0,
             time_spent: Duration::zero(),
         }
@@ -103,5 +107,12 @@ mod tests {
         assert_eq!(stats.times_worked, 5);
         assert_eq!(stats.time_spent.num_seconds(), 10);
         Ok(())
+    }
+
+    #[rstest]
+    fn update_on_default_fails(conn: Connection) {
+        let item_stats = Default::default();
+        let result = item_stats_update(&conn, &item_stats);
+        assert!(result.is_err(), "Update on default should fail");
     }
 }
