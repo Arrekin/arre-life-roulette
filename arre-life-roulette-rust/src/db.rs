@@ -52,6 +52,7 @@ pub fn initialize_database(conn: &Connection) -> Result<()> {
         )",
         (),
     )?;
+    initialize_tags_table(conn)?;
     Ok(())
 }
 
@@ -158,6 +159,31 @@ pub fn initialize_lists_table(conn: &Connection) -> Result<()> {
         CREATE TRIGGER after_lists_delete AFTER DELETE ON lists BEGIN
             DELETE FROM lists_search_index WHERE rowid = old.list_id;
         END;
+        "
+    )
+}
+
+pub fn initialize_tags_table(conn: &Connection) -> Result<()> {
+    conn.execute_batch("
+        CREATE TABLE tags (
+            tag_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL
+        );
+        CREATE TABLE item_tag_map (
+            tag_id INTEGER,
+            item_id INTEGER,
+            PRIMARY KEY(tag_id, item_id),
+            FOREIGN KEY(tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE,
+            FOREIGN KEY(item_id) REFERENCES items(item_id) ON DELETE CASCADE
+        );
+        CREATE TABLE list_tag_map (
+            tag_id INTEGER,
+            list_id INTEGER,
+            PRIMARY KEY(tag_id, list_id),
+            FOREIGN KEY(tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE,
+            FOREIGN KEY(list_id) REFERENCES lists(list_id) ON DELETE CASCADE
+        );
         "
     )
 }

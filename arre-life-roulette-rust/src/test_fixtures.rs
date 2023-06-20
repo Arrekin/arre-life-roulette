@@ -3,7 +3,7 @@ use rstest::*;
 
 use crate::db::initialize_database;
 use crate::item::{Item, item_create, ItemId};
-use crate::item_tag::{ItemTagId};
+use crate::tag::{TagId};
 use crate::list::{List, list_create, ListId};
 use crate::errors::ArreResult;
 
@@ -21,7 +21,7 @@ pub struct TestFactory<'a> {
     connection: &'a Connection,
     created_items: Vec<ItemId>,
     created_lists: Vec<ListId>,
-    created_item_tags: Vec<ItemTagId>,
+    created_item_tags: Vec<TagId>,
     items_count: usize,
     lists_count: usize,
     item_tags_count: usize,

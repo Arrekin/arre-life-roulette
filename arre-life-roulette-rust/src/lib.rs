@@ -1,6 +1,6 @@
 #![feature(try_blocks)]
 mod item;
-mod item_tag;
+mod tag;
 mod db;
 #[cfg(test)]
 mod test_fixtures;
