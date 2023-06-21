@@ -8,7 +8,7 @@ use crate::utils::{ArreDateTime, Id};
 pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> ArreResult<Item> {
     let name = name.as_ref();
     let description = description.as_ref();
-    let dt = Utc::now().to_string();
+    let dt = ArreDateTime::now();
     conn.execute("
         INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, false, false);
         ", (dt.clone(), dt.clone(), name, description),
@@ -25,7 +25,7 @@ pub fn item_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn item_persist(conn: &Connection, item: &mut Item) -> ArreResult<()> {
-    let dt = Utc::now().to_string();
+    let dt = ArreDateTime::now();
     conn.execute("
         INSERT INTO items (created_date, updated_date, name, description, is_suspended, is_finished) VALUES (?1, ?2, ?3, ?4, ?5, ?6);
         ", (dt.clone(), dt.clone(), &item.name, &item.description, item.is_suspended, item.is_finished),
@@ -296,7 +296,7 @@ mod tests {
         #[case] expected_number_of_items: usize,
     ) -> ArreResult<()> {
         let mut tf = TestFactory::new(&conn);
-        // Create 5 items and check that get_all() returns all items
+        // Create items and check that get_all() returns all of them
         tf.create_items(expected_number_of_items)?;
         let items = item_get_all::<Vec<_>>(&conn)?;
         assert_eq!(items.len(), expected_number_of_items);

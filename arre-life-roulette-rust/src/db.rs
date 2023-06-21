@@ -167,6 +167,8 @@ pub fn initialize_tags_table(conn: &Connection) -> Result<()> {
     conn.execute_batch("
         CREATE TABLE tags (
             tag_id INTEGER PRIMARY KEY,
+            created_date TEXT NOT NULL,
+            updated_date TEXT NOT NULL,
             name TEXT NOT NULL,
             color TEXT NOT NULL
         );

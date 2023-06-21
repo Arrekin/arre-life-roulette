@@ -9,7 +9,7 @@ use crate::utils::{ArreDateTime, Id};
 pub fn list_create(conn: &Connection, name: impl AsRef<str>, description: impl AsRef<str>) -> ArreResult<List> {
     let name = name.as_ref();
     let description = description.as_ref();
-    let dt = Utc::now().to_string();
+    let dt = ArreDateTime::now();
     conn.execute("
         INSERT INTO lists (created_date, updated_date, name, description) VALUES (?1, ?2, ?3, ?4)
         ", (dt.clone(), dt.clone(), name, description),
@@ -26,7 +26,7 @@ pub fn list_create(conn: &Connection, name: impl AsRef<str>, description: impl A
 }
 
 pub fn list_persist(conn: &Connection, list: &mut List) -> ArreResult<()> {
-    let dt = Utc::now().to_string();
+    let dt = ArreDateTime::now();
     conn.execute("
         INSERT INTO lists (created_date, updated_date, name, description) VALUES (?1, ?2, ?3, ?4)
         ", (dt.clone(), dt.clone(), &list.name, &list.description),

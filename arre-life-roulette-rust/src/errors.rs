@@ -21,6 +21,7 @@ pub enum ArreError {
     #[error("[color=red]Owned bus cannot be cloned[/color]")]
     OwnedBusCannotBeCloned(),
     // Core errors
+    // TODO: Lists and Tags are also using this error, so maybe rename it
     #[error("[color=red] Attempt to operate on non persisted item [/color]")]
     ItemNotPersisted(),
     #[error("[color=red]Database connection not established[/color]")]

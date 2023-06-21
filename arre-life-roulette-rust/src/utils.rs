@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::str::FromStr;
-use chrono::{DateTime, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 use rusqlite::types::{FromSql, FromSqlResult, ToSql};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -72,6 +72,10 @@ impl <T>Display for Id<T> {
 #[derive(Debug, Eq, PartialEq, Hash, Clone)]
 pub struct ArreDateTime<Tz: TimeZone> {
     date_time: DateTime<Tz>,
+}
+
+impl ArreDateTime<Utc> {
+    pub fn now() -> Self { ArreDateTime::new(Utc::now()) }
 }
 
 impl<Tz: TimeZone> ArreDateTime<Tz> {
