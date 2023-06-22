@@ -1,7 +1,8 @@
-[gd_scene load_steps=8 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=9 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 [ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
+[ext_resource type="PackedScene" uid="uid://co0jnrw417al0" path="res://Prefabs/TagLargePrefab.tscn" id="3_avreh"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
 bg_color = Color(0.117647, 0.262745, 0.262745, 1)
@@ -148,6 +149,40 @@ custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Add List"
+
+[node name="TagsView" type="TagsView" parent="UI/MainView"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MainView/TagsView"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/MainView/TagsView/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 20
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/MainView/TagsView/VBoxContainer/MarginContainer"]
+clip_contents = false
+layout_mode = 2
+
+[node name="HFlowContainer" type="HFlowContainer" parent="UI/MainView/TagsView/VBoxContainer/MarginContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="MarginContainer" parent="UI/MainView/TagsView/VBoxContainer/MarginContainer/ScrollContainer/HFlowContainer" instance=ExtResource("3_avreh")]
+layout_mode = 2
 
 [node name="RollView" type="RollView" parent="UI"]
 visible = false

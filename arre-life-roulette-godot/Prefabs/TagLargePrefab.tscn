@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://co0jnrw417al0"]
+
+[node name="MarginContainer" type="MarginContainer"]
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer"]
+layout_mode = 2
+text = "kjlkjkljkljkljkkljkljkl"
