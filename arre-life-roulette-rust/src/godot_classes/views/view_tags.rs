@@ -1,18 +1,14 @@
-use bus::BusReader;
-use godot::engine::{Control, ControlVirtual, Button, LineEdit};
+use godot::engine::{Control, ControlVirtual, Button};
+use godot::engine::node::InternalMode;
 use godot::prelude::*;
 use crate::db::DB;
-use crate::errors::{ArreResult, BoxedError};
-use crate::godot_classes::containers::cards_flow_container::CardsFlowContainer;
-use crate::godot_classes::element_card::{Content, ElementCard};
+use crate::errors::{ArreError, ArreResult, BoxedError};
 use crate::godot_classes::resources::TAG_LARGE_PREFAB;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::singletons::signals::Signals;
+use crate::godot_classes::tag_card::TagLargeCard;
 use crate::godot_classes::utils::{GdHolder, get_singleton};
-use crate::godot_classes::views::view_item_modify::ItemModifyView;
-use crate::godot_classes::views::view_item_stats::ItemStatsView;
-use crate::item::{Item, item_get_all, item_search};
-use crate::item_stats::item_stats_get;
+use crate::tag::{Tag, tag_get_all};
 
 #[derive(GodotClass)]
 #[class(base=Control)]
@@ -22,6 +18,7 @@ pub struct TagsView {
 
     // cached internal UI elements
     pub tags_container: GdHolder<Control>,
+    pub tag_add_button: GdHolder<Button>,
 
     // cached sub-scenes
     tag_large_prefab: Gd<PackedScene>,
@@ -31,16 +28,19 @@ pub struct TagsView {
 impl TagsView {
     #[func]
     fn on_tag_add_button_up(&mut self) {
-        // match try {
-        //     self.item_modify_view.ok_mut().map(|view| {
-        //         let mut view = view.bind_mut();
-        //         view.set_mode_add();
-        //         view.show();
-        //     })?;
-        // } {
-        //     Ok(_) => {},
-        //     Err::<_, BoxedError>(e) => log_error(e)
-        // }
+        match try {
+            let mut new_tag = Tag::default();
+            new_tag.name = "New Tag".to_string();
+
+            let mut added_card = self.add_card(new_tag)?;
+            let mut added_card = added_card.bind_mut();
+            let line_edit = added_card.name_line_edit.ok_mut()?;
+            line_edit.grab_focus();
+            line_edit.select_all();
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e)
+        }
     }
 
     #[func]
@@ -52,11 +52,32 @@ impl TagsView {
     #[func]
     fn refresh_display(&mut self) {
         match try {
-            //self.cards_container.ok_mut()?.bind_mut().set_cards(self.items.clone());
+            // Remove existing tag cards
+            self.tags_container.ok_mut()?
+                .get_children(false)
+                .iter_shared()
+                .for_each(|mut child_card| child_card.queue_free());
+
+            let connection = &*DB.ok()?;
+            for tag in tag_get_all::<Vec<_>>(connection)? {
+                self.add_card(tag)?;
+            }
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e)
         }
+    }
+
+    pub fn add_card(&mut self, tag: Tag) -> ArreResult<Gd<TagLargeCard>>{
+        let mut card = self.tag_large_prefab
+            .try_instantiate_as::<TagLargeCard>()
+            .ok_or(ArreError::InstantiateFailed(
+                TAG_LARGE_PREFAB.into(),
+                "TagsView::refresh_display".into()
+            ))?;
+        self.tags_container.ok_mut()?.add_child(card.share().upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
+        card.bind_mut().set_tag(tag);
+        Ok(card)
     }
 }
 
@@ -68,6 +89,7 @@ impl ControlVirtual for TagsView {
 
             // cached internal UI elements
             tags_container: GdHolder::default(),
+            tag_add_button: GdHolder::default(),
 
             // cached sub-scenes
             tag_large_prefab: load(TAG_LARGE_PREFAB),
@@ -76,7 +98,13 @@ impl ControlVirtual for TagsView {
     fn ready(&mut self) {
         match try {
             let base = &self.base;
-            self.tags_container = GdHolder::from_path(base, "VBoxContainer/MarginContainer/ScrollContainer/HFlowContainer");
+            self.tags_container = GdHolder::from_path(base, "VBoxContainer/CentralMarginContainer/ScrollContainer/HFlowContainer");
+            self.tag_add_button = GdHolder::from_path(base, "VBoxContainer/BottomMarginContainer/TagAddButton");
+            self.tag_add_button.ok_mut()?.connect(
+                "button_up".into(),
+                base.callable("on_tag_add_button_up"),
+                0,
+            );
 
             // Get singleton and connect to global signals(show / hide)
             let mut signals = get_singleton::<Signals>("Signals");

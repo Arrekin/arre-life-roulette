@@ -1,13 +1,11 @@
-use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Label, Button, LineEdit};
+use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Button, LineEdit};
 use godot::engine::global::MouseButton;
 use godot::prelude::*;
+use crate::db::DB;
 use crate::errors::{BoxedError};
-use crate::godot_classes::singletons::buses::{BusType};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
-use crate::item::Item;
-use crate::list::List;
-use crate::tag::Tag;
+use crate::tag::{Tag, tag_persist, tag_update};
 
 #[derive(GodotClass)]
 #[class(base=MarginContainer)]
@@ -21,7 +19,6 @@ pub struct TagLargeCard {
 
     // state
     pub tag: Tag,
-    pub is_being_edited: bool,
 }
 
 #[godot_api]
@@ -40,6 +37,26 @@ impl TagLargeCard {
         self.tag = tag;
         self.refresh_display();
     }
+
+    #[func]
+    fn on_text_submitted(&mut self) {
+        match try {
+            self.tag.name = self.name_line_edit.ok_mut()?.get_text().to_string();
+            let connection = &*DB.ok()?;
+            match self.tag.id {
+                Some(_) => {
+                    tag_update(connection, &self.tag)?;
+                },
+                None => {
+                    tag_persist(connection, &mut self.tag)?;
+                }
+            }
+            self.name_line_edit.ok_mut()?.release_focus()
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
 }
 
 #[godot_api]
@@ -54,7 +71,6 @@ impl MarginContainerVirtual for TagLargeCard {
 
             // state
             tag: Tag::default(),
-            is_being_edited: false,
         }
     }
 
@@ -73,6 +89,11 @@ impl MarginContainerVirtual for TagLargeCard {
                 0,
             );
             self.name_line_edit = GdHolder::from_path(base, "PanelContainer/LineEdit");
+            self.name_line_edit.ok_mut()?.connect(
+                "text_submitted".into(),
+                base.callable("on_text_submitted"),
+                0,
+            );
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),
@@ -81,6 +102,7 @@ impl MarginContainerVirtual for TagLargeCard {
 
     fn input(&mut self, event: Gd<InputEvent>) {
         match try {
+            if !self.name_line_edit.ok()?.has_focus() { return; }
             let event_local = {
                 let event_local = self.base.make_input_local(event);
                 match event_local {
@@ -94,7 +116,7 @@ impl MarginContainerVirtual for TagLargeCard {
                         MouseButton::MOUSE_BUTTON_LEFT => {
                             let self_rect = Rect2::new(Vector2::new(0.0, 0.0), self.base.get_size());
                             if !self_rect.has_point(mouse_event.get_position()) {
-                                self.name_line_edit.ok_mut()?.release_focus();
+                                self.on_text_submitted();
                             }
                         },
                         _ => {}
