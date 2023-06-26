@@ -32,11 +32,7 @@ impl TagsView {
             let mut new_tag = Tag::default();
             new_tag.name = "New Tag".to_string();
 
-            let mut added_card = self.add_card(new_tag)?;
-            let mut added_card = added_card.bind_mut();
-            let line_edit = added_card.name_line_edit.ok_mut()?;
-            line_edit.grab_focus();
-            line_edit.select_all();
+           self.add_card(new_tag)?;
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e)
@@ -76,7 +72,14 @@ impl TagsView {
                 "TagsView::refresh_display".into()
             ))?;
         self.tags_container.ok_mut()?.add_child(card.share().upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
-        card.bind_mut().set_tag(tag);
+        {
+            let mut card = card.bind_mut();
+            card.set_tag(tag);
+            let line_edit = card.name_line_edit.ok_mut()?;
+            // Card is called back when it's line_edit focus changes, so we have to deffer it to avoid re-borrow
+            line_edit.call_deferred("grab_focus".into(), &[]);
+            line_edit.call_deferred("select_all".into(), &[]);
+        }
         Ok(card)
     }
 }

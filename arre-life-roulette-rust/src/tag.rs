@@ -45,6 +45,12 @@ pub fn tag_update(conn: &Connection, tag: &Tag) -> ArreResult<()> {
     Ok(())
 }
 
+pub fn tag_delete(conn: &Connection, id: impl Into<TagId>) -> ArreResult<()> {
+    let id = id.into();
+    conn.execute("DELETE FROM tags WHERE tag_id = ?1;", (id,))?;
+    Ok(())
+}
+
 pub type TagId = Id<Tag>;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Tag {
@@ -151,6 +157,19 @@ mod tests {
         tf.create_tags(expected_number_of_tags)?;
         let tags = tag_get_all::<Vec<_>>(&conn)?;
         assert_eq!(tags.len(), expected_number_of_tags);
+        Ok(())
+    }
+
+    #[rstest]
+    fn tag_delete_successful(conn: Connection) -> ArreResult<()> {
+        let mut tf = TestFactory::new(&conn);
+        let tags_nb = 3;
+        let tags = tf.create_tags(tags_nb)?;
+        tf.assert_table_count("tags", tags_nb)?;
+        for idx in (0..tags_nb).rev() {
+            tag_delete(&conn, tags[idx].get_id()?)?;
+            tf.assert_table_count("tags", idx)?;
+        }
         Ok(())
     }
 }

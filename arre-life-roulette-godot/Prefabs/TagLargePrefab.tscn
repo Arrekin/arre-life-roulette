@@ -1,11 +1,13 @@
-[gd_scene format=3 uid="uid://co0jnrw417al0"]
+[gd_scene load_steps=3 format=3 uid="uid://co0jnrw417al0"]
+
+[ext_resource type="Texture2D" uid="uid://bwks7avkotskd" path="res://Icons/delete.png" id="1_8ihdm"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_trn3d"]
+texture = ExtResource("1_8ihdm")
 
 [node name="MarginContainer" type="TagLargeCard"]
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
-layout_mode = 2
-
-[node name="Button" type="Button" parent="PanelContainer"]
 layout_mode = 2
 
 [node name="LineEdit" type="LineEdit" parent="PanelContainer"]
@@ -16,3 +18,20 @@ max_length = 64
 expand_to_text_length = true
 caret_blink = true
 caret_blink_interval = 0.5
+
+[node name="TopLevel" type="Control" parent="."]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DeleteButton" type="Button" parent="TopLevel"]
+visible = false
+top_level = true
+layout_mode = 1
+offset_left = 110.766
+offset_top = 5.0
+offset_right = 141.766
+offset_bottom = 36.0
+tooltip_text = "Remove Tag"
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxTexture_trn3d")
+theme_override_styles/hover = SubResource("StyleBoxTexture_trn3d")

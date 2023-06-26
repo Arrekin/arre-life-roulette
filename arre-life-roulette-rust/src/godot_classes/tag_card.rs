@@ -2,10 +2,10 @@ use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginCo
 use godot::engine::global::MouseButton;
 use godot::prelude::*;
 use crate::db::DB;
-use crate::errors::{BoxedError};
+use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
-use crate::tag::{Tag, tag_persist, tag_update};
+use crate::tag::{Tag, tag_delete, tag_persist, tag_update};
 
 #[derive(GodotClass)]
 #[class(base=MarginContainer)]
@@ -14,8 +14,8 @@ pub struct TagLargeCard {
     base: Base<MarginContainer>,
 
     // cached UI elements
-    pub button: GdHolder<Button>,
     pub name_line_edit: GdHolder<LineEdit>,
+    pub delete_button: GdHolder<Button>,
 
     // state
     pub tag: Tag,
@@ -41,21 +41,84 @@ impl TagLargeCard {
     #[func]
     fn on_text_submitted(&mut self) {
         match try {
-            self.tag.name = self.name_line_edit.ok_mut()?.get_text().to_string();
-            let connection = &*DB.ok()?;
-            match self.tag.id {
-                Some(_) => {
-                    tag_update(connection, &self.tag)?;
-                },
-                None => {
-                    tag_persist(connection, &mut self.tag)?;
-                }
-            }
-            self.name_line_edit.ok_mut()?.release_focus()
+            self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
         }
+    }
+
+    #[func]
+    fn on_focus_entered(&mut self) {
+        match try {
+            if self.tag.id.is_some() {
+                self.delete_button.ok_mut()?.set_visible(true);
+            }
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
+    fn on_focus_exited(&mut self) {
+        match try {
+            let new_name = self.name_line_edit.ok_mut()?.get_text().to_string();
+            let connection = &*DB.ok()?;
+            match self.tag.id {
+                Some(_) => {
+                    if new_name.is_empty() {
+                        self.refresh_display();
+                    } else {
+                        self.tag.name = new_name;
+                        tag_update(connection, &self.tag)?;
+                    }
+                },
+                None => {
+                    if new_name.is_empty() {
+                        self.queue_free();
+                    } else {
+                        self.tag.name = new_name;
+                        tag_persist(connection, &mut self.tag)?;
+                    }
+                }
+            }
+            self.delete_button.ok_mut()?.set_visible(false);
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
+    fn on_delete_button_up(&mut self) {
+        match try {
+            let connection = &*DB.ok()?;
+            tag_delete(connection, self.tag.get_id()?)?;
+            self.queue_free();
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+
+    fn position_delete_button(&mut self) -> ArreResult<()> {
+        // Tag Card references
+        let size = self.get_size();
+        let le_size = self.name_line_edit.ok()?.get_size();
+        let global_pos =  self.get_global_position();
+        let mut delete_button = self.delete_button.ok_mut()?;
+
+        // Size
+        delete_button.set_size(Vector2::new(le_size.y, le_size.y), false);
+
+        // Position
+        let shift_x = size.x;
+        let shift_y = size.y / 2. - delete_button.get_size().y / 2.;
+        let new_pos = global_pos + Vector2::new(shift_x, shift_y);
+        delete_button.set_position(new_pos, false);
+        Ok(())
     }
 }
 
@@ -66,8 +129,8 @@ impl MarginContainerVirtual for TagLargeCard {
             base,
 
             // cached UI elements
-            button: GdHolder::default(),
             name_line_edit: GdHolder::default(),
+            delete_button: GdHolder::default(),
 
             // state
             tag: Tag::default(),
@@ -82,18 +145,46 @@ impl MarginContainerVirtual for TagLargeCard {
             self.add_theme_constant_override("margin_bottom".into(), 5);
 
             let base = &self.base;
-            self.button = GdHolder::from_path(base, "PanelContainer/Button");
-            self.button.ok_mut()?.connect(
-                "gui_input".into(),
-                base.callable("on_gui_input"),
-                0,
-            );
             self.name_line_edit = GdHolder::from_path(base, "PanelContainer/LineEdit");
-            self.name_line_edit.ok_mut()?.connect(
-                "text_submitted".into(),
-                base.callable("on_text_submitted"),
-                0,
-            );
+            {
+                let line_edit = self.name_line_edit.ok_mut()?;
+                line_edit.connect(
+                    "text_submitted".into(),
+                    base.callable("on_text_submitted"),
+                    0,
+                );
+                line_edit.connect(
+                    "focus_entered".into(),
+                    base.callable("on_focus_entered"),
+                    0,
+                );
+                line_edit.connect(
+                    "focus_exited".into(),
+                    base.callable("on_focus_exited"),
+                    0,
+                );
+            }
+            self.delete_button = GdHolder::from_path(base, "TopLevel/DeleteButton");
+            {
+                let delete_button = self.delete_button.ok_mut()?;
+                delete_button.set_visible(false);
+                delete_button.connect(
+                    "button_up".into(),
+                    base.callable("on_delete_button_up"),
+                    0,
+                );
+            }
+        } {
+            Ok(_) => {}
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    fn process(&mut self, _delta: f64) {
+        match try {
+            if self.delete_button.ok_mut()?.is_visible() {
+                self.position_delete_button()?;
+            }
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),
@@ -113,10 +204,10 @@ impl MarginContainerVirtual for TagLargeCard {
             if let Some(mouse_event) = event_local.try_cast::<InputEventMouseButton>() {
                 if mouse_event.is_pressed() {
                     match mouse_event.get_button_index() {
-                        MouseButton::MOUSE_BUTTON_LEFT => {
+                        MouseButton::MOUSE_BUTTON_RIGHT => {
                             let self_rect = Rect2::new(Vector2::new(0.0, 0.0), self.base.get_size());
                             if !self_rect.has_point(mouse_event.get_position()) {
-                                self.on_text_submitted();
+                                self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
                             }
                         },
                         _ => {}
