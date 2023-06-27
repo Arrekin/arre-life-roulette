@@ -1,8 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://ku55ksphuedg"]
+[gd_scene load_steps=8 format=3 uid="uid://ku55ksphuedg"]
 
 [ext_resource type="Theme" uid="uid://dogrnltpdypd8" path="res://Themes/TabSelectionButtons.tres" id="1_666we"]
 [ext_resource type="PackedScene" uid="uid://080x07ut6n1c" path="res://Prefabs/SearchBarPrefab.tscn" id="2_2yjra"]
-[ext_resource type="PackedScene" uid="uid://co0jnrw417al0" path="res://Prefabs/TagLargePrefab.tscn" id="3_7688t"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fqtck"]
 bg_color = Color(0.117647, 0.262745, 0.262745, 1)
@@ -180,15 +179,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 alignment = 1
-
-[node name="MarginContainer" parent="UI/MainView/TagsView/VBoxContainer/CentralMarginContainer/ScrollContainer/HFlowContainer" instance=ExtResource("3_7688t")]
-layout_mode = 2
-
-[node name="MarginContainer2" parent="UI/MainView/TagsView/VBoxContainer/CentralMarginContainer/ScrollContainer/HFlowContainer" instance=ExtResource("3_7688t")]
-layout_mode = 2
-
-[node name="MarginContainer3" parent="UI/MainView/TagsView/VBoxContainer/CentralMarginContainer/ScrollContainer/HFlowContainer" instance=ExtResource("3_7688t")]
-layout_mode = 2
 
 [node name="BottomMarginContainer" type="MarginContainer" parent="UI/MainView/TagsView/VBoxContainer"]
 layout_mode = 2

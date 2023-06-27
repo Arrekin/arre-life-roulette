@@ -7,6 +7,7 @@ use crate::errors::{ArreError, ArreResult};
 use crate::item::{item_create};
 use crate::item_stats::{item_stats_get, item_stats_update};
 use crate::list::{list_create, list_items_add};
+use crate::tag::{Tag, tag_persist};
 
 pub struct DbConnectionWrapper(pub OnceLock<Mutex<Connection>>);
 impl DbConnectionWrapper {
@@ -245,5 +246,13 @@ pub fn initialized_demo_content_dev(c: &Connection) -> ArreResult<()> {
         let chosen_items = item_ids.choose_multiple(&mut rng, items_nb);
         list_items_add(&c, list.get_id()?, chosen_items)?;
     }
+
+    let _tags = [
+        tag_persist(&c, &mut Tag::new("Dangerous".to_string(), "#cb42e0".to_string()))?,
+        tag_persist(&c, &mut Tag::new("Needs Tools".to_string(), "#32cd66".to_string()))?,
+        tag_persist(&c, &mut Tag::new("Requires Supplies".to_string(), "#ba889c".to_string()))?,
+        tag_persist(&c, &mut Tag::new("Restricted".to_string(), "#fc9144".to_string()))?,
+        tag_persist(&c, &mut Tag::new("Important".to_string(), "#f1e507".to_string()))?,
+    ];
     Ok(())
 }

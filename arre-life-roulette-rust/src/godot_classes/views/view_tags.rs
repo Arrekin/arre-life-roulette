@@ -32,7 +32,14 @@ impl TagsView {
             let mut new_tag = Tag::default();
             new_tag.name = "New Tag".to_string();
 
-           self.add_card(new_tag)?;
+            let mut card = self.add_card(new_tag)?;
+            let mut card = card.bind_mut();
+
+            // Card is called back when it's line_edit focus changes, so we have to deffer it to avoid re-borrow
+            let line_edit = card.name_line_edit.ok_mut()?;
+            line_edit.call_deferred("grab_focus".into(), &[]);
+            line_edit.call_deferred("select_all".into(), &[]);
+
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e)
@@ -75,10 +82,6 @@ impl TagsView {
         {
             let mut card = card.bind_mut();
             card.set_tag(tag);
-            let line_edit = card.name_line_edit.ok_mut()?;
-            // Card is called back when it's line_edit focus changes, so we have to deffer it to avoid re-borrow
-            line_edit.call_deferred("grab_focus".into(), &[]);
-            line_edit.call_deferred("select_all".into(), &[]);
         }
         Ok(card)
     }
@@ -128,6 +131,9 @@ impl ControlVirtual for TagsView {
                     base.callable("on_view_selected"),
                     0,
                 );
+            }
+            if self.is_visible() {
+                self.refresh_display();
             }
         } {
             Ok(_) => {}

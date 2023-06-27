@@ -62,6 +62,16 @@ pub struct Tag {
 }
 
 impl Tag {
+    pub fn new(name: String, color: String) -> Self {
+        Self {
+            id: None,
+            created_date: Utc::now().into(),
+            updated_date: Utc::now().into(),
+            name,
+            color,
+        }
+    }
+
     pub fn from_row(row: &Row) -> Result<Tag> {
         Ok(Tag {
             id: Some(row.get(0)?),
