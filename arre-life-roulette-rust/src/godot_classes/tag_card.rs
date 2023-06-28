@@ -1,8 +1,9 @@
-use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Button, LineEdit};
-use godot::engine::global::MouseButton;
+use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Button, LineEdit, InputEventKey, StyleBoxFlat};
+use godot::engine::global::{Key, MouseButton};
 use godot::prelude::*;
 use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
+use crate::godot_classes::resources::TAG_LARGE_STYLE_BOX_FLAT;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::{GdHolder};
 use crate::tag::{Tag, tag_delete, tag_persist, tag_update};
@@ -17,6 +18,9 @@ pub struct TagLargeCard {
     pub name_line_edit: GdHolder<LineEdit>,
     pub delete_button: GdHolder<Button>,
 
+    // cached themes
+    pub tag_large_style_box_flat: Gd<StyleBoxFlat>,
+
     // state
     pub tag: Tag,
 }
@@ -26,7 +30,9 @@ impl TagLargeCard {
     #[func]
     fn refresh_display(&mut self) {
         match try {
-            self.name_line_edit.ok_mut()?.set_text(self.tag.name.clone().into());
+            let line_edit = self.name_line_edit.ok_mut()?;
+            line_edit.set_text(self.tag.name.clone().into());
+            self.tag_large_style_box_flat.set_bg_color(Color::from_html(self.tag.color.clone()).unwrap());
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),
@@ -132,6 +138,11 @@ impl MarginContainerVirtual for TagLargeCard {
             name_line_edit: GdHolder::default(),
             delete_button: GdHolder::default(),
 
+            // cached themes
+            tag_large_style_box_flat: load::<StyleBoxFlat>(TAG_LARGE_STYLE_BOX_FLAT)
+                .duplicate(true).unwrap()
+                .cast::<StyleBoxFlat>(),
+
             // state
             tag: Tag::default(),
         }
@@ -163,6 +174,7 @@ impl MarginContainerVirtual for TagLargeCard {
                     base.callable("on_focus_exited"),
                     0,
                 );
+                line_edit.add_theme_stylebox_override("normal".into(), self.tag_large_style_box_flat.share().upcast());
             }
             self.delete_button = GdHolder::from_path(base, "TopLevel/DeleteButton");
             {
@@ -201,7 +213,7 @@ impl MarginContainerVirtual for TagLargeCard {
                     None => return,
                 }
             };
-            if let Some(mouse_event) = event_local.try_cast::<InputEventMouseButton>() {
+            if let Some(mouse_event) = event_local.share().try_cast::<InputEventMouseButton>() {
                 if mouse_event.is_pressed() {
                     match mouse_event.get_button_index() {
                         MouseButton::MOUSE_BUTTON_RIGHT => {
@@ -212,6 +224,11 @@ impl MarginContainerVirtual for TagLargeCard {
                         },
                         _ => {}
                     }
+                }
+            } else if let Some(key_event) = event_local.try_cast::<InputEventKey>() {
+                if !key_event.is_pressed() && key_event.get_keycode() == Key::KEY_ESCAPE {
+                    self.refresh_display(); // Cancel any changes and reload data from the state
+                    self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
                 }
             }
         } {
