@@ -27,6 +27,24 @@ pub struct TagLargeCard {
 
 #[godot_api]
 impl TagLargeCard {
+
+    pub fn set_tag(&mut self, tag: Tag) {
+        self.tag = tag;
+        self.refresh_display();
+    }
+
+    pub fn grab_focus(&mut self) -> ArreResult<()> {
+        self.name_line_edit.ok_mut()?.call_deferred("grab_focus".into(), &[]); Ok(())
+    }
+
+    pub fn release_focus(&mut self) -> ArreResult<()> {
+        self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]); Ok(())
+    }
+
+    pub fn select_all(&mut self) -> ArreResult<()> {
+        self.name_line_edit.ok_mut()?.call_deferred("select_all".into(), &[]); Ok(())
+    }
+
     #[func]
     fn refresh_display(&mut self) {
         match try {
@@ -39,15 +57,10 @@ impl TagLargeCard {
         }
     }
 
-    pub fn set_tag(&mut self, tag: Tag) {
-        self.tag = tag;
-        self.refresh_display();
-    }
-
     #[func]
     fn on_text_submitted(&mut self) {
         match try {
-            self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
+            self.release_focus()?;
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -108,13 +121,12 @@ impl TagLargeCard {
         }
     }
 
-
     fn position_delete_button(&mut self) -> ArreResult<()> {
         // Tag Card references
         let size = self.get_size();
         let le_size = self.name_line_edit.ok()?.get_size();
         let global_pos =  self.get_global_position();
-        let mut delete_button = self.delete_button.ok_mut()?;
+        let delete_button = self.delete_button.ok_mut()?;
 
         // Size
         delete_button.set_size(Vector2::new(le_size.y, le_size.y), false);
@@ -219,7 +231,7 @@ impl MarginContainerVirtual for TagLargeCard {
                         MouseButton::MOUSE_BUTTON_RIGHT => {
                             let self_rect = Rect2::new(Vector2::new(0.0, 0.0), self.base.get_size());
                             if !self_rect.has_point(mouse_event.get_position()) {
-                                self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
+                                self.release_focus()?;
                             }
                         },
                         _ => {}
@@ -228,7 +240,7 @@ impl MarginContainerVirtual for TagLargeCard {
             } else if let Some(key_event) = event_local.try_cast::<InputEventKey>() {
                 if !key_event.is_pressed() && key_event.get_keycode() == Key::KEY_ESCAPE {
                     self.refresh_display(); // Cancel any changes and reload data from the state
-                    self.name_line_edit.ok_mut()?.call_deferred("release_focus".into(), &[]);
+                    self.release_focus()?;
                 }
             }
         } {
