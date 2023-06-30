@@ -1,10 +1,11 @@
-use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, Button, LineEdit, InputEventKey, StyleBoxFlat};
+use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, LineEdit, InputEventKey, StyleBoxFlat};
 use godot::engine::global::{Key, MouseButton};
 use godot::prelude::*;
 use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::resources::TAG_LARGE_STYLE_BOX_FLAT;
 use crate::godot_classes::singletons::logger::log_error;
+use crate::godot_classes::sliding_button::SlidingButton;
 use crate::godot_classes::utils::{GdHolder};
 use crate::tag::{Tag, tag_delete, tag_persist, tag_update};
 
@@ -16,7 +17,7 @@ pub struct TagLargeCard {
 
     // cached UI elements
     pub name_line_edit: GdHolder<LineEdit>,
-    pub delete_button: GdHolder<Button>,
+    pub delete_sliding_button: GdHolder<SlidingButton>,
 
     // cached themes
     pub tag_large_style_box_flat: Gd<StyleBoxFlat>,
@@ -71,7 +72,7 @@ impl TagLargeCard {
     fn on_focus_entered(&mut self) {
         match try {
             if self.tag.id.is_some() {
-                self.delete_button.ok_mut()?.set_visible(true);
+                self.delete_sliding_button.ok_mut()?.bind_mut().slide_in()?;
             }
         } {
             Ok(_) => {},
@@ -102,7 +103,7 @@ impl TagLargeCard {
                     }
                 }
             }
-            self.delete_button.ok_mut()?.set_visible(false);
+            self.delete_sliding_button.ok_mut()?.bind_mut().slide_out()
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -126,10 +127,10 @@ impl TagLargeCard {
         let size = self.get_size();
         let le_size = self.name_line_edit.ok()?.get_size();
         let global_pos =  self.get_global_position();
-        let delete_button = self.delete_button.ok_mut()?;
+        let mut delete_button = self.delete_sliding_button.ok_mut()?.bind_mut();
 
         // Size
-        delete_button.set_size(Vector2::new(le_size.y, le_size.y), false);
+        delete_button.set_size(Vector2::new(le_size.y, le_size.y))?;
 
         // Position
         let shift_x = size.x;
@@ -148,7 +149,7 @@ impl MarginContainerVirtual for TagLargeCard {
 
             // cached UI elements
             name_line_edit: GdHolder::default(),
-            delete_button: GdHolder::default(),
+            delete_sliding_button: GdHolder::default(),
 
             // cached themes
             tag_large_style_box_flat: load::<StyleBoxFlat>(TAG_LARGE_STYLE_BOX_FLAT)
@@ -188,11 +189,12 @@ impl MarginContainerVirtual for TagLargeCard {
                 );
                 line_edit.add_theme_stylebox_override("normal".into(), self.tag_large_style_box_flat.share().upcast());
             }
-            self.delete_button = GdHolder::from_path(base, "TopLevel/DeleteButton");
+            self.delete_sliding_button = GdHolder::from_path(base, "TopLevel/DeleteSlidingButton");
             {
-                let delete_button = self.delete_button.ok_mut()?;
-                delete_button.set_visible(false);
-                delete_button.connect(
+                let mut delete_button = self.delete_sliding_button.ok_mut()?.bind_mut();
+                let actual_button = delete_button.button.ok_mut()?;
+                actual_button.set_tooltip_text("Delete Tag".into());
+                actual_button.connect(
                     "button_up".into(),
                     base.callable("on_delete_button_up"),
                     0,
@@ -206,7 +208,7 @@ impl MarginContainerVirtual for TagLargeCard {
 
     fn process(&mut self, _delta: f64) {
         match try {
-            if self.delete_button.ok_mut()?.is_visible() {
+            if self.delete_sliding_button.ok()?.bind().is_visible() {
                 self.position_delete_button()?;
             }
         } {

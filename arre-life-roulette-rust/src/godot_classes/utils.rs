@@ -77,6 +77,12 @@ impl<T> GdHolder<T>
     }
 }
 
+impl<T> From<Gd<T>> for GdHolder<T> where T: GodotClass {
+    fn from(value: Gd<T>) -> Self {
+        Self { gd: Some(value), path: String::new() }
+    }
+}
+
 impl<T> Default for GdHolder<T>
     where T: GodotClass
 {

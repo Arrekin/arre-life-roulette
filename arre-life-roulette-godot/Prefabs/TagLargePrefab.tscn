@@ -1,12 +1,20 @@
-[gd_scene load_steps=5 format=3 uid="uid://co0jnrw417al0"]
+[gd_scene load_steps=4 format=3 uid="uid://co0jnrw417al0"]
 
-[ext_resource type="StyleBox" uid="uid://bndbuidn4bxpt" path="res://Themes/TagLargeStyleBoxFlat.tres" id="1_4vtbw"]
-[ext_resource type="Texture2D" uid="uid://bwks7avkotskd" path="res://Icons/delete.png" id="1_8ihdm"]
+[ext_resource type="PackedScene" uid="uid://d8x14myp8twi" path="res://Prefabs/SlidingButton.tscn" id="1_x1ot7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_83qkj"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_trn3d"]
-texture = ExtResource("1_8ihdm")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hj5gf"]
+bg_color = Color(0.945098, 0.898039, 0.027451, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 12
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
 
 [node name="MarginContainer" type="TagLargeCard"]
 
@@ -18,7 +26,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_83qkj")
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 7
-theme_override_styles/normal = ExtResource("1_4vtbw")
+theme_override_styles/normal = SubResource("StyleBoxFlat_hj5gf")
 text = "Tag Name"
 alignment = 1
 max_length = 64
@@ -30,15 +38,5 @@ caret_blink_interval = 0.5
 layout_mode = 2
 mouse_filter = 2
 
-[node name="DeleteButton" type="Button" parent="TopLevel"]
-visible = false
-top_level = true
-layout_mode = 1
-offset_left = 110.766
-offset_top = 5.0
-offset_right = 141.766
-offset_bottom = 36.0
-tooltip_text = "Remove Tag"
-focus_mode = 0
-theme_override_styles/normal = SubResource("StyleBoxTexture_trn3d")
-theme_override_styles/hover = SubResource("StyleBoxTexture_trn3d")
+[node name="DeleteSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
+layout_mode = 0

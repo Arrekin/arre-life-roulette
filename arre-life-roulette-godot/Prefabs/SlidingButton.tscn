@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://d8x14myp8twi"]
+
+[ext_resource type="Texture2D" uid="uid://bwks7avkotskd" path="res://Icons/delete.png" id="1_dmlrb"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_trn3d"]
+texture = ExtResource("1_dmlrb")
+
+[node name="DeleteSlidingButton" type="SlidingButton"]
+top_level = true
+clip_contents = true
+offset_left = 102.766
+offset_top = 5.0
+offset_right = 125.766
+offset_bottom = 28.0
+mouse_filter = 2
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+offset_left = -23.0
+offset_bottom = 23.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxTexture_trn3d")
+theme_override_styles/hover = SubResource("StyleBoxTexture_trn3d")
