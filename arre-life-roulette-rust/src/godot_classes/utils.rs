@@ -28,26 +28,17 @@ impl<T> GdHolder<T>
 
     #[inline]
     pub fn ok(&self) -> Result<&Gd<T>, ArreError> {
-        match &self.gd {
-            Some(v) => Ok(v),
-            None => Err(ArreError::NullGd(self.path.clone())),
-        }
+        self.gd.as_ref().ok_or(ArreError::NullGd(self.path.clone()))
     }
 
     #[inline]
     pub fn ok_mut(&mut self) -> Result<&mut Gd<T>, ArreError> {
-        match &mut self.gd {
-            Some(v) => Ok(v),
-            None => Err(ArreError::NullGd(self.path.clone())),
-        }
+        self.gd.as_mut().ok_or(ArreError::NullGd(self.path.clone()))
     }
 
     #[inline]
     pub fn ok_shared(&self) -> Result<Gd<T>, ArreError> {
-        match &self.gd {
-            Some(v) => Ok(v.share()),
-            None => Err(ArreError::NullGd(self.path.clone())),
-        }
+        self.gd.as_ref().map(|gd| gd.share()).ok_or(ArreError::NullGd(self.path.clone()))
     }
 }
 
@@ -72,8 +63,12 @@ impl<T> GdHolder<T>
     }
     pub fn from_instance_id(instance_id: InstanceId) -> Self {
         let gd = Gd::<Node>::try_from_instance_id(instance_id);
-        let path = if let Some(gd) = &gd { gd.get_path().into() } else { String::new() };
-        Self { gd: gd.and_then(|gd| gd.try_cast::<T>()), path: path.into() }
+        let (path, gd) = if let Some(gd) = gd {
+            (gd.get_path().into(), gd.try_cast::<T>())
+        } else {
+            (String::new(), None)
+        };
+        Self { gd, path }
     }
 }
 
@@ -96,10 +91,7 @@ impl<T> Clone for GdHolder<T>
 {
     fn clone(&self) -> Self {
         Self {
-            gd: match &self.gd {
-                Some(v) => Some(v.share()),
-                None => None
-            },
+            gd: self.gd.as_ref().map(|t| t.share()),
             path: self.path.clone()
         }
     }
