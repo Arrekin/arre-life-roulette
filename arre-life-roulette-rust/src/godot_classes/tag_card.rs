@@ -5,7 +5,7 @@ use crate::db::DB;
 use crate::errors::{ArreResult, BoxedError};
 use crate::godot_classes::resources::TAG_LARGE_STYLE_BOX_FLAT;
 use crate::godot_classes::singletons::logger::log_error;
-use crate::godot_classes::sliding_button::SlidingButton;
+use crate::godot_classes::sliding_button::{SlidingButton, SlidingInDirection};
 use crate::godot_classes::utils::{GdHolder};
 use crate::tag::{Tag, tag_delete, tag_persist, tag_update};
 
@@ -18,6 +18,7 @@ pub struct TagLargeCard {
     // cached UI elements
     pub name_line_edit: GdHolder<LineEdit>,
     pub delete_sliding_button: GdHolder<SlidingButton>,
+    pub bg_color_sliding_button: GdHolder<SlidingButton>,
 
     // cached themes
     pub tag_large_style_box_flat: Gd<StyleBoxFlat>,
@@ -73,6 +74,7 @@ impl TagLargeCard {
         match try {
             if self.tag.id.is_some() {
                 self.delete_sliding_button.ok_mut()?.bind_mut().slide_in()?;
+                self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_in()?;
             }
         } {
             Ok(_) => {},
@@ -103,7 +105,8 @@ impl TagLargeCard {
                     }
                 }
             }
-            self.delete_sliding_button.ok_mut()?.bind_mut().slide_out()
+            self.delete_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+            self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_out()?;
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -122,21 +125,55 @@ impl TagLargeCard {
         }
     }
 
+    #[func]
+    fn on_bg_color_button_up(&mut self) {
+        match try {
+            godot_print!("on_bg_color_button_up");
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    fn position_buttons(&mut self) -> ArreResult<()> {
+        self.position_delete_button()?;
+        self.position_bg_color_button()?;
+        Ok(())
+    }
+
     fn position_delete_button(&mut self) -> ArreResult<()> {
         // Tag Card references
         let size = self.get_size();
-        let le_size = self.name_line_edit.ok()?.get_size();
+        let btn_size = self.name_line_edit.ok()?.get_size().y;
         let global_pos =  self.get_global_position();
         let mut delete_button = self.delete_sliding_button.ok_mut()?.bind_mut();
 
         // Size
-        delete_button.set_size(Vector2::new(le_size.y, le_size.y))?;
+        delete_button.set_size(Vector2::new(btn_size, btn_size))?;
 
-        // Position
+        // Position - to the right
         let shift_x = size.x;
         let shift_y = size.y / 2. - delete_button.get_size().y / 2.;
         let new_pos = global_pos + Vector2::new(shift_x, shift_y);
         delete_button.set_position(new_pos, false);
+        Ok(())
+    }
+
+    fn position_bg_color_button(&mut self) -> ArreResult<()> {
+        // Tag Card references
+        let size = self.get_size();
+        let btn_size = self.name_line_edit.ok()?.get_size().y;
+        let global_pos =  self.get_global_position();
+        let mut bg_color_button = self.bg_color_sliding_button.ok_mut()?.bind_mut();
+
+        // Size
+        bg_color_button.set_size(Vector2::new(btn_size, btn_size))?;
+
+        // Position - to the right, below
+        let shift_x = size.x - btn_size;
+        let shift_y = size.y;
+        let new_pos = global_pos + Vector2::new(shift_x, shift_y);
+        bg_color_button.set_position(new_pos, false);
         Ok(())
     }
 }
@@ -150,6 +187,7 @@ impl MarginContainerVirtual for TagLargeCard {
             // cached UI elements
             name_line_edit: GdHolder::default(),
             delete_sliding_button: GdHolder::default(),
+            bg_color_sliding_button: GdHolder::default(),
 
             // cached themes
             tag_large_style_box_flat: load::<StyleBoxFlat>(TAG_LARGE_STYLE_BOX_FLAT)
@@ -192,11 +230,24 @@ impl MarginContainerVirtual for TagLargeCard {
             self.delete_sliding_button = GdHolder::from_path(base, "TopLevel/DeleteSlidingButton");
             {
                 let mut delete_button = self.delete_sliding_button.ok_mut()?.bind_mut();
+                delete_button.set_sliding_direction(SlidingInDirection::Right)?;
                 let actual_button = delete_button.button.ok_mut()?;
                 actual_button.set_tooltip_text("Delete Tag".into());
                 actual_button.connect(
                     "button_up".into(),
                     base.callable("on_delete_button_up"),
+                    0,
+                );
+            }
+            self.bg_color_sliding_button = GdHolder::from_path(base, "TopLevel/BackgroundColorSlidingButton");
+            {
+                let mut bg_color_button = self.bg_color_sliding_button.ok_mut()?.bind_mut();
+                bg_color_button.set_sliding_direction(SlidingInDirection::Bottom)?;
+                let actual_button = bg_color_button.button.ok_mut()?;
+                actual_button.set_tooltip_text("Pick Background Color".into());
+                actual_button.connect(
+                    "button_up".into(),
+                    base.callable("on_bg_color_button_up"),
                     0,
                 );
             }
@@ -208,9 +259,7 @@ impl MarginContainerVirtual for TagLargeCard {
 
     fn process(&mut self, _delta: f64) {
         match try {
-            if self.delete_sliding_button.ok()?.bind().is_visible() {
-                self.position_delete_button()?;
-            }
+            self.position_buttons()?;
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),

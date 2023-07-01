@@ -4,8 +4,9 @@ use crate::errors::{ArreError, ArreResult, BoxedError};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::GdHolder;
 
-pub enum SlidingDirection {
+pub enum SlidingInDirection {
     Right,
+    Bottom,
 }
 
 #[derive(GodotClass)]
@@ -18,7 +19,7 @@ pub struct SlidingButton {
     pub button: GdHolder<Button>,
 
     // state
-    pub direction: SlidingDirection,
+    pub direction: SlidingInDirection,
     sliding_tween: GdHolder<Tween>,
 }
 
@@ -31,54 +32,81 @@ impl SlidingButton {
         Ok(())
     }
 
+    pub fn set_sliding_direction(&mut self, direction: SlidingInDirection) -> ArreResult<()> {
+        self.direction = direction;
+        let hidden_position = self.get_hiding_offset();
+        self.button.ok_mut()?.set_position(hidden_position, false);
+        Ok(())
+    }
+
     pub fn slide_in(&mut self) -> ArreResult<()> {
         // In case of parent leaving scene we return early to avoid tween errors
         if !self.base.is_inside_tree() { return Ok(()); }
-        match self.direction {
-            SlidingDirection::Right => {
-                self.sliding_tween.ok_mut()?.kill();
+        self.sliding_tween.ok_mut()?.kill();
+        let mut new_sliding_tween = self.base.create_tween()
+            .ok_or(ArreError::UnexpectedNone("SlidingButton::slide_in".into()))?;
 
-                let mut new_sliding_tween = self.base.create_tween()
-                    .ok_or(ArreError::UnexpectedNone("SlidingButton::slide_in".into()))?;
+        match self.direction {
+            SlidingInDirection::Right => {
                 new_sliding_tween.tween_property(
                     self.button.ok_shared()?.upcast(),
                     "position:x".into(),
                     0.to_variant(),
                     0.2
                 );
-                new_sliding_tween.play();
-                self.sliding_tween = new_sliding_tween.into();
+            },
+            SlidingInDirection::Bottom => {
+                new_sliding_tween.tween_property(
+                    self.button.ok_shared()?.upcast(),
+                    "position:y".into(),
+                    0.to_variant(),
+                    0.2,
+                );
             }
         }
+
+        new_sliding_tween.play();
+        self.sliding_tween = new_sliding_tween.into();
         Ok(())
     }
 
     pub fn slide_out(&mut self) -> ArreResult<()> {
         // In case of parent leaving scene we return early to avoid tween errors
         if !self.base.is_inside_tree() { return Ok(()); }
-        match self.direction {
-            SlidingDirection::Right => {
-                self.sliding_tween.ok_mut()?.kill();
+        self.sliding_tween.ok_mut()?.kill();
+        let mut new_sliding_tween = self.base.create_tween()
+            .ok_or(ArreError::UnexpectedNone("SlidingButton::slide_out".into()))?;
 
-                let mut new_sliding_tween = self.base.create_tween()
-                    .ok_or(ArreError::UnexpectedNone("SlidingButton::slide_out".into()))?;
+        match self.direction {
+            SlidingInDirection::Right => {
                 new_sliding_tween.tween_property(
                     self.button.ok_shared()?.upcast(),
                     "position:x".into(),
                     self.get_hiding_offset().x.to_variant(),
                     0.2
                 );
-                new_sliding_tween.play();
-                self.sliding_tween = new_sliding_tween.into();
+            },
+            SlidingInDirection::Bottom => {
+                new_sliding_tween.tween_property(
+                    self.button.ok_shared()?.upcast(),
+                    "position:y".into(),
+                    self.get_hiding_offset().y.to_variant(),
+                    0.2
+                );
             }
         }
+        new_sliding_tween.play();
+        self.sliding_tween = new_sliding_tween.into();
         Ok(())
     }
 
     fn get_hiding_offset(&self) -> Vector2 {
         match self.direction {
-            SlidingDirection::Right => {
+            SlidingInDirection::Right => {
                 Vector2::new(-self.base.get_size().x, 0.)
+            },
+            SlidingInDirection::Bottom => {
+                Vector2::new(0., -self.base.get_size().y)
             }
         }
     }
@@ -94,7 +122,7 @@ impl ControlVirtual for SlidingButton {
             button: GdHolder::default(),
 
             // state
-            direction: SlidingDirection::Right,
+            direction: SlidingInDirection::Right,
             sliding_tween: GdHolder::default(),
         }
     }
@@ -107,8 +135,7 @@ impl ControlVirtual for SlidingButton {
             sliding_tween.stop();
             self.sliding_tween = sliding_tween.into();
             self.button = GdHolder::from_path(base, "Button");
-            let hidden_position = self.get_hiding_offset();
-            self.button.ok_mut()?.set_position(hidden_position, false);
+            self.set_sliding_direction(SlidingInDirection::Right)?;
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),
