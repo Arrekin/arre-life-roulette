@@ -1,6 +1,4 @@
 use godot::engine::{Control, ControlVirtual, VBoxContainer, RichTextLabel, InputEvent};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, BoxedError};
 use crate::godot_classes::resources::{LOG_ENTRY_PREFAB, LOGS_VIEW_TOGGLE, SELECTION_BUTTON_PREFAB};
@@ -31,19 +29,19 @@ impl LogsView {
             let vbox = self.logs_vboxcontainer.ok_mut()?;
 
             // First delete all existing UI log entries
-            for mut child in vbox.get_children(false).iter_shared() {
+            for mut child in vbox.get_children().iter_shared() {
                 child.queue_free();
             }
             // Then add new ones
             for log in logger.logs.clone() {
                 let log_node = self.log_entry_prefab
-                    .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
+                    .instantiate()
                     .ok_or(ArreError::InstantiateFailed(SELECTION_BUTTON_PREFAB.into(), "LogsView::refresh_display".into()))?;
 
                     let rich_text_label = log_node.try_get_node_as::<RichTextLabel>("PanelContainer/MarginContainer/RichTextLabel");
                     rich_text_label.map(|mut log_label| {
                         log_label.set_text(log.clone());
-                        vbox.add_child(log_node, false, InternalMode::INTERNAL_MODE_DISABLED);
+                        vbox.add_child(log_node);
                     }).ok_or(ArreError::NullGd("LogsView::refresh_display::<RichTextLabel>".into()))?;
             }
         } {
@@ -74,7 +72,7 @@ impl ControlVirtual for LogsView {
     }
 
     fn unhandled_key_input(&mut self, event: Gd<InputEvent>) {
-        if event.is_action_released(LOGS_VIEW_TOGGLE.into(), true) {
+        if event.is_action_released(LOGS_VIEW_TOGGLE.into()) {
             let current_visible = self.is_visible();
             if !current_visible {
                 self.refresh_display();

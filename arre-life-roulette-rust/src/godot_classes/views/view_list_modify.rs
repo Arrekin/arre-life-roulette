@@ -288,19 +288,16 @@ impl PanelVirtual for ListModifyView {
             self.name_line_edit.ok_mut()?.connect(
                 "text_changed".into(),
                 base.callable("on_name_line_edit_text_set"),
-                0,
             );
             self.description_text_edit = GdHolder::from_path(base, "VBoxContainer/TextMarginContainer/VBoxContainer/ListDescriptionTextEdit");
             self.description_text_edit.ok_mut()?.connect(
                 "text_changed".into(),
                 base.callable("on_description_text_edit_text_set"),
-                0,
             );
             self.searchbar = GdHolder::from_path(base, "VBoxContainer/SearchBarLineEdit");
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
                 base.callable("on_search_request"),
-                0,
             );
             self.cards_in_container = GdHolder::from_path(base, "VBoxContainer/HSplitContainer/PanelContainerIn/ScrollContainer/CardsInContainer");
             self.observer_card_in_left_click = self.cards_in_container.ok_mut()?.bind_mut().bus_card_left_click.add_rx();
@@ -310,13 +307,11 @@ impl PanelVirtual for ListModifyView {
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_apply_list_button_up"),
-                0,
             );
             self.close_button = GdHolder::from_path(base, "DialogCloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_dialog_close_button_up"),
-                0,
             );
         } {
             Ok(_) => {},

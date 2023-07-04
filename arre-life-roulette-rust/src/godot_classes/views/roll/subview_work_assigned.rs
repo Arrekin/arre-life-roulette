@@ -122,7 +122,6 @@ impl VBoxContainerVirtual for RollWorkAssignedSubview {
             self.work_finish_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_work_finish_button_up"),
-                0,
             );
 
             // cached external UI elements

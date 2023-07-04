@@ -1,5 +1,4 @@
 use godot::engine::{Control, ControlVirtual, Button};
-use godot::engine::node::InternalMode;
 use godot::prelude::*;
 use crate::db::DB;
 use crate::errors::{ArreError, ArreResult, BoxedError};
@@ -54,7 +53,7 @@ impl TagsView {
         match try {
             // Remove existing tag cards
             self.tags_container.ok_mut()?
-                .get_children(false)
+                .get_children()
                 .iter_shared()
                 .for_each(|mut child_card| child_card.queue_free());
 
@@ -75,7 +74,7 @@ impl TagsView {
                 TAG_LARGE_PREFAB.into(),
                 "TagsView::refresh_display".into()
             ))?;
-        self.tags_container.ok_mut()?.add_child(card.share().upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
+        self.tags_container.ok_mut()?.add_child(card.share().upcast());
         {
             let mut card = card.bind_mut();
             card.set_tag(tag);
@@ -106,7 +105,6 @@ impl ControlVirtual for TagsView {
             self.tag_add_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_tag_add_button_up"),
-                0,
             );
 
             // Get singleton and connect to global signals(show / hide)
@@ -116,17 +114,14 @@ impl ControlVirtual for TagsView {
                 signals.connect(
                     "item_view_tab_selected".into(),
                     base.callable("hide"),
-                    0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
                     base.callable("hide"),
-                    0,
                 );
                 signals.connect(
                     "tag_view_tab_selected".into(),
                     base.callable("on_view_selected"),
-                    0,
                 );
             }
             if self.is_visible() {

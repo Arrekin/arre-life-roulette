@@ -52,7 +52,7 @@ pub fn log_error(error: impl Into<BoxedError>) {
     let mut logger = get_singleton::<Logger>("Logger");
     {
         let mut logger = logger.bind_mut();
-        let stripped_error = logger.regex_bbcode_strip.sub(error.to_string().into(), "".into(), true, 0, -1);
+        let stripped_error = logger.regex_bbcode_strip.sub(error.to_string().into(), "".into());
         utilities::push_error("Rust Error".to_variant(), &[stripped_error.to_variant()]);
         logger.error(error);
     }

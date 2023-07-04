@@ -179,20 +179,17 @@ impl PanelVirtual for ItemModifyView {
             self.session_time_check_button.ok_mut()?.connect(
                 "toggled".into(),
                 base.callable("on_session_time_check_button_toggled"),
-                0,
             );
             self.session_time_spin_box = GdHolder::from_path(base,"VBoxContainer/CentralMarginContainer/VBoxContainer/SessionTimeHBoxContainer/SpinBox");
             self.apply_button = GdHolder::from_path(base,"VBoxContainer/BottomMarginContainer/ItemApplyButton");
             self.apply_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_apply_item_button_up"),
-                0,
             );
             self.close_button = GdHolder::from_path(base,"DialogCloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_dialog_close_button_up"),
-                0,
             );
         } {
             Ok(_) => {}

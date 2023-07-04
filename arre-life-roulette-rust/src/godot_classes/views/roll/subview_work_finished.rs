@@ -67,13 +67,11 @@ impl VBoxContainerVirtual for RollWorkFinishedSubview {
             self.roll_again_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_roll_again_button_up"),
-                0,
             );
             self.close_button = GdHolder::from_path(base, "CloseButton");
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_close_button_up"),
-                0,
             );
 
             // cached external UI elements

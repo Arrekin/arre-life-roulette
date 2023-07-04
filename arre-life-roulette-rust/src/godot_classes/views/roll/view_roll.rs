@@ -124,7 +124,6 @@ impl PanelVirtual for RollView {
             self.work_cancel_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("close_dialog"),
-                0,
             );
             self.list_name_label = GdHolder::from_path(base, "VBoxContainer/TopMarginContainer/ListNameLabel");
             // subviews

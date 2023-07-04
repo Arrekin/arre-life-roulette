@@ -161,7 +161,6 @@ impl ControlVirtual for ItemsView {
             self.item_add_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_item_add_button_up"),
-                0,
             );
             self.cards_container = GdHolder::from_path(base,"VBoxContainer/ItemsListScrollContainer/CardsFlowContainer");
             self.cards_container.ok_mut().map(|cc| {
@@ -173,14 +172,12 @@ impl ControlVirtual for ItemsView {
             self.searchbar.ok_mut()?.connect(
                 "text_submitted".into(),
                 base.callable("on_search_request"),
-                0,
             );
 
             self.item_modify_view = GdHolder::from_path(base, "../../ItemModifyView");
             self.item_modify_view.ok_mut()?.bind_mut().connect(
                 "dialog_closed".into(),
                 base.callable("refresh_full"),
-                0,
             );
             self.item_stats_view = GdHolder::from_path(base, "../../ItemStatsView");
 
@@ -192,17 +189,14 @@ impl ControlVirtual for ItemsView {
                 signals.connect(
                     "item_view_tab_selected".into(),
                     base.callable("on_view_selected"),
-                    0,
                 );
                 signals.connect(
                     "list_view_tab_selected".into(),
                     base.callable("hide"),
-                    0,
                 );
                 signals.connect(
                     "tag_view_tab_selected".into(),
                     base.callable("hide"),
-                    0,
                 );
             }
 

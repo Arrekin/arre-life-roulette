@@ -52,7 +52,7 @@ impl HBoxContainerVirtual for TabViewSelector {
     fn ready(&mut self) {
         match try {
             // TODO: Find a better place for global config
-            DisplayServer::singleton().window_set_min_size(Vector2i::new(1024, 768), 0);
+            DisplayServer::singleton().window_set_min_size(Vector2i::new(1024, 768));
 
             self.add_theme_constant_override("separation".into(), 20);
 
@@ -61,19 +61,16 @@ impl HBoxContainerVirtual for TabViewSelector {
             self.items_view_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_item_view_button_up"),
-                0,
             );
             self.lists_view_button = GdHolder::from_path(base, "ListsViewButton");
             self.lists_view_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_list_view_button_up"),
-                0,
             );
             self.tags_view_button = GdHolder::from_path(base, "TagsViewButton");
             self.tags_view_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_tag_view_button_up"),
-                0,
             );
         } {
             Ok(_) => {}

@@ -1,6 +1,4 @@
 use godot::engine::{FlowContainer, FlowContainerVirtual, PackedScene};
-use godot::engine::node::InternalMode;
-use godot::engine::packed_scene::GenEditState;
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult, BoxedError};
 use crate::godot_classes::element_card::{Content, ElementCard};
@@ -35,12 +33,12 @@ impl CardsFlowContainer {
             let new_cards = contents.into_iter().map(
                 |content| {
                     let instance = self.element_card_prefab
-                        .instantiate(GenEditState::GEN_EDIT_STATE_DISABLED)
+                        .instantiate()
                         .ok_or(ArreError::InstantiateFailed(
                             ELEMENT_CARD_PREFAB.into(),
                             "CardsFlowContainer::set_cards".into()
                         ))?;
-                    self.add_child(instance.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
+                    self.add_child(instance.share());
                     let mut card = instance.try_cast::<ElementCard>()
                         .ok_or(ArreError::CastFailed("ElementCard".into(), "CardsFlowContainer::set_cards".into()))?;
                     {

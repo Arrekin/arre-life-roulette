@@ -27,15 +27,15 @@ pub struct SlidingButton {
 impl SlidingButton {
 
     pub fn set_size(&mut self, size: Vector2) -> ArreResult<()> {
-        self.base.set_size(size, false);
-        self.button.ok_mut()?.set_size(size, false);
+        self.base.set_size(size);
+        self.button.ok_mut()?.set_size(size);
         Ok(())
     }
 
     pub fn set_sliding_direction(&mut self, direction: SlidingInDirection) -> ArreResult<()> {
         self.direction = direction;
         let hidden_position = self.get_hiding_offset();
-        self.button.ok_mut()?.set_position(hidden_position, false);
+        self.button.ok_mut()?.set_position(hidden_position);
         Ok(())
     }
 

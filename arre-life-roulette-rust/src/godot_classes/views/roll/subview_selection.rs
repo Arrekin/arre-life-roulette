@@ -134,7 +134,6 @@ impl VBoxContainerVirtual for RollSelectionSubview {
             self.roll_start_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_roll_start_button_up"),
-                0,
             );
 
             // cached external UI elements

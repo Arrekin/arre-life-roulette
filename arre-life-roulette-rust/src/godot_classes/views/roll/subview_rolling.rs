@@ -1,5 +1,4 @@
 use godot::engine::{ScrollContainer, VBoxContainer, VBoxContainerVirtual};
-use godot::engine::node::InternalMode;
 use godot::prelude::*;
 use rand::prelude::SliceRandom;
 use rand::Rng;
@@ -50,7 +49,7 @@ impl RollRollingSubview {
         for scroll_idx in 0..3 {
             let scroll = self.scrolls[scroll_idx].ok_mut()?;
             let vbox = GdHolder::<VBoxContainer>::from_path(&self.base, format!("{}/VBoxContainer", scroll.get_path()));
-            cards[scroll_idx] = vbox.ok()?.get_children(false);
+            cards[scroll_idx] = vbox.ok()?.get_children();
         }
         for row in 0..ROLL_CARDS_ROWS {
             if eligible_items.len() > ROLL_CARDS_ROWS - row {
@@ -88,7 +87,7 @@ impl RollRollingSubview {
             // We use a scaling factor to make sure we reach max_position when time is max_time.
             let scale_factor = (vbox.get_size().y as f64 / ROLL_ANIMATION_DURATION.log10()).max(0.);
             let new_scroll_position = scale_factor * adjusted_time.log10();
-            scroll.set_v_scroll(new_scroll_position.round() as i64);
+            scroll.set_v_scroll(new_scroll_position.round() as i32);
         }
         Ok(())
     }
@@ -132,7 +131,7 @@ impl VBoxContainerVirtual for RollRollingSubview {
                     let new_card = self.element_card_prefab
                         .try_instantiate_as::<ElementCard>()
                         .ok_or(ArreError::InstantiateFailed("ElementCard".into(), "RollRollingSubview::ready".into()))?;
-                    vbox.add_child(new_card.share().upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
+                    vbox.add_child(new_card.share().upcast());
                 }
 
             }

@@ -69,7 +69,6 @@ impl PanelVirtual for ItemStatsView {
             self.close_button.ok_mut()?.connect(
                 "button_up".into(),
                 base.callable("on_dialog_close_button_up"),
-                0,
             );
         } {
             Ok(_) => {}

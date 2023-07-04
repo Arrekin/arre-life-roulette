@@ -155,7 +155,7 @@ impl TagLargeCard {
         let shift_x = size.x;
         let shift_y = size.y / 2. - delete_button.get_size().y / 2.;
         let new_pos = global_pos + Vector2::new(shift_x, shift_y);
-        delete_button.set_position(new_pos, false);
+        delete_button.set_position(new_pos);
         Ok(())
     }
 
@@ -173,7 +173,7 @@ impl TagLargeCard {
         let shift_x = size.x - btn_size;
         let shift_y = size.y;
         let new_pos = global_pos + Vector2::new(shift_x, shift_y);
-        bg_color_button.set_position(new_pos, false);
+        bg_color_button.set_position(new_pos);
         Ok(())
     }
 }
@@ -191,7 +191,7 @@ impl MarginContainerVirtual for TagLargeCard {
 
             // cached themes
             tag_large_style_box_flat: load::<StyleBoxFlat>(TAG_LARGE_STYLE_BOX_FLAT)
-                .duplicate(true).unwrap()
+                .duplicate().unwrap()
                 .cast::<StyleBoxFlat>(),
 
             // state
@@ -213,17 +213,14 @@ impl MarginContainerVirtual for TagLargeCard {
                 line_edit.connect(
                     "text_submitted".into(),
                     base.callable("on_text_submitted"),
-                    0,
                 );
                 line_edit.connect(
                     "focus_entered".into(),
                     base.callable("on_focus_entered"),
-                    0,
                 );
                 line_edit.connect(
                     "focus_exited".into(),
                     base.callable("on_focus_exited"),
-                    0,
                 );
                 line_edit.add_theme_stylebox_override("normal".into(), self.tag_large_style_box_flat.share().upcast());
             }
@@ -236,7 +233,6 @@ impl MarginContainerVirtual for TagLargeCard {
                 actual_button.connect(
                     "button_up".into(),
                     base.callable("on_delete_button_up"),
-                    0,
                 );
             }
             self.bg_color_sliding_button = GdHolder::from_path(base, "TopLevel/BackgroundColorSlidingButton");
@@ -248,7 +244,6 @@ impl MarginContainerVirtual for TagLargeCard {
                 actual_button.connect(
                     "button_up".into(),
                     base.callable("on_bg_color_button_up"),
-                    0,
                 );
             }
         } {
