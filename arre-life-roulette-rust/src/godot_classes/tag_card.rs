@@ -1,8 +1,8 @@
-use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, LineEdit, InputEventKey, StyleBoxFlat};
+use godot::engine::{MarginContainer, InputEvent, InputEventMouseButton, MarginContainerVirtual, LineEdit, InputEventKey, StyleBoxFlat, ColorPicker, DisplayServer};
 use godot::engine::global::{Key, MouseButton};
 use godot::prelude::*;
 use crate::db::DB;
-use crate::errors::{ArreResult, BoxedError};
+use crate::errors::{ArreError, ArreResult, BoxedError};
 use crate::godot_classes::resources::TAG_LARGE_STYLE_BOX_FLAT;
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::sliding_button::{SlidingButton, SlidingInDirection};
@@ -19,6 +19,7 @@ pub struct TagLargeCard {
     pub name_line_edit: GdHolder<LineEdit>,
     pub delete_sliding_button: GdHolder<SlidingButton>,
     pub bg_color_sliding_button: GdHolder<SlidingButton>,
+    pub color_picker: GdHolder<ColorPicker>,
 
     // cached themes
     pub tag_large_style_box_flat: Gd<StyleBoxFlat>,
@@ -52,7 +53,10 @@ impl TagLargeCard {
         match try {
             let line_edit = self.name_line_edit.ok_mut()?;
             line_edit.set_text(self.tag.name.clone().into());
-            self.tag_large_style_box_flat.set_bg_color(Color::from_html(self.tag.color.clone()).unwrap());
+            self.tag_large_style_box_flat.set_bg_color(
+                Color::from_html(self.tag.color.clone())
+                    .ok_or(ArreError::UnexpectedNone("TagLargeCard::refresh_display[Color::from_html]".into()))?
+            );
         } {
             Ok(_) => {}
             Err::<_, BoxedError>(e) => log_error(e),
@@ -86,6 +90,7 @@ impl TagLargeCard {
     fn on_focus_exited(&mut self) {
         match try {
             let new_name = self.name_line_edit.ok_mut()?.get_text().to_string();
+            let new_bg_color = self.tag_large_style_box_flat.get_bg_color().to_html();
             let connection = &*DB.ok()?;
             match self.tag.id {
                 Some(_) => {
@@ -93,6 +98,7 @@ impl TagLargeCard {
                         self.refresh_display();
                     } else {
                         self.tag.name = new_name;
+                        self.tag.color = new_bg_color.into();
                         tag_update(connection, &self.tag)?;
                     }
                 },
@@ -101,12 +107,14 @@ impl TagLargeCard {
                         self.queue_free();
                     } else {
                         self.tag.name = new_name;
+                        self.tag.color = new_bg_color.into();
                         tag_persist(connection, &mut self.tag)?;
                     }
                 }
             }
             self.delete_sliding_button.ok_mut()?.bind_mut().slide_out()?;
             self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+            self.color_picker.ok_mut()?.hide();
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -128,7 +136,19 @@ impl TagLargeCard {
     #[func]
     fn on_bg_color_button_up(&mut self) {
         match try {
-            godot_print!("on_bg_color_button_up");
+            let is_visible = self.color_picker.ok_mut()?.is_visible();
+            self.color_picker.ok_mut()?.set_visible(!is_visible);
+
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
+    fn on_color_changed(&mut self, color: Color) {
+        match try {
+            self.tag_large_style_box_flat.set_bg_color(color);
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -138,6 +158,7 @@ impl TagLargeCard {
     fn position_buttons(&mut self) -> ArreResult<()> {
         self.position_delete_button()?;
         self.position_bg_color_button()?;
+        self.position_color_picker()?;
         Ok(())
     }
 
@@ -176,6 +197,41 @@ impl TagLargeCard {
         bg_color_button.set_position(new_pos);
         Ok(())
     }
+
+    fn position_color_picker(&mut self) -> ArreResult<()> {
+        // Tag Card references
+        let size = self.get_size();
+        let global_pos =  self.get_global_position();
+        // Background color button reference
+        let bg_button = self.bg_color_sliding_button.ok()?.bind();
+        let bg_button_size = bg_button.get_size();
+        let bg_button_pos = bg_button.get_position();
+
+        // Color picker reference
+        let cp = self.color_picker.ok_mut()?;
+        let cp_size = cp.get_size();
+
+        // Window reference
+        let window_size = DisplayServer::singleton().window_get_size();
+
+        // Position depending on free space
+        let right_margin = window_size.x as f32 - (bg_button_pos.x + bg_button_size.x);
+        let bottom_margin = window_size.y as f32 - (bg_button_pos.y + bg_button_size.y);
+        if right_margin > cp_size.x && bottom_margin > cp_size.y {
+            // If bottom right has enough space, that is the preferred location
+            cp.set_position(Vector2::new(bg_button_pos.x + bg_button_size.x, bg_button_pos.y + bg_button_size.y));
+        } else if bottom_margin > cp_size.y {
+            // Otherwise, if at least bottom has enough space, place it bottom left
+            cp.set_position(Vector2::new(bg_button_pos.x - cp_size.x, bg_button_pos.y + bg_button_size.y));
+        } else if right_margin > cp_size.x {
+            // Otherwise, If at least right has enough space, place it top right
+            cp.set_position(Vector2::new(global_pos.x + size.x, global_pos.y - cp_size.y));
+        } else {
+            // Otherwise, top left should have enough space
+            cp.set_position(Vector2::new(global_pos.x - cp_size.x, global_pos.y - cp_size.y));
+        }
+        Ok(())
+    }
 }
 
 #[godot_api]
@@ -188,6 +244,7 @@ impl MarginContainerVirtual for TagLargeCard {
             name_line_edit: GdHolder::default(),
             delete_sliding_button: GdHolder::default(),
             bg_color_sliding_button: GdHolder::default(),
+            color_picker: GdHolder::default(),
 
             // cached themes
             tag_large_style_box_flat: load::<StyleBoxFlat>(TAG_LARGE_STYLE_BOX_FLAT)
@@ -245,6 +302,14 @@ impl MarginContainerVirtual for TagLargeCard {
                     "button_up".into(),
                     base.callable("on_bg_color_button_up"),
                 );
+            }
+            self.color_picker = GdHolder::from_path(base, "TopLevel/ColorPicker");
+            {
+                let color_picker = self.color_picker.ok_mut()?;
+                color_picker.connect(
+                    "color_changed".into(),
+                    base.callable("on_color_changed"),
+                )
             }
         } {
             Ok(_) => {}
