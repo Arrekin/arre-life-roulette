@@ -4,7 +4,7 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_83qkj"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8sn33"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ffmt"]
 bg_color = Color(0.945098, 0.898039, 0.027451, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
@@ -26,7 +26,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_83qkj")
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 7
-theme_override_styles/normal = SubResource("StyleBoxFlat_8sn33")
+theme_override_styles/normal = SubResource("StyleBoxFlat_0ffmt")
 text = "Tag Name"
 alignment = 1
 max_length = 64
@@ -40,21 +40,23 @@ mouse_filter = 2
 
 [node name="BackgroundColorSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
 layout_mode = 0
-offset_left = 79.7656
+offset_left = 66.0
 offset_top = 33.0
-offset_right = 102.766
+offset_right = 89.0
 offset_bottom = 56.0
 
 [node name="DeleteSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
 layout_mode = 0
+offset_left = 89.0
+offset_right = 112.0
 
 [node name="ColorPicker" type="ColorPicker" parent="TopLevel"]
 visible = false
 top_level = true
 layout_mode = 0
-offset_left = 102.766
+offset_left = 89.0
 offset_top = 56.0
-offset_right = 392.766
+offset_right = 379.0
 offset_bottom = 488.0
 edit_alpha = false
 can_add_swatches = false
@@ -62,3 +64,17 @@ color_modes_visible = false
 sliders_visible = false
 hex_visible = false
 presets_visible = false
+
+[node name="RejectSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -23.0
+offset_right = 23.0
+offset_bottom = 0.0
+
+[node name="AcceptSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 33.0
+offset_right = 23.0
+offset_bottom = 56.0

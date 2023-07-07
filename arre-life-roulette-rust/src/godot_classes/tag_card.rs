@@ -19,6 +19,8 @@ pub struct TagLargeCard {
     pub name_line_edit: GdHolder<LineEdit>,
     pub delete_sliding_button: GdHolder<SlidingButton>,
     pub bg_color_sliding_button: GdHolder<SlidingButton>,
+    pub reject_sliding_button: GdHolder<SlidingButton>,
+    pub accept_sliding_button: GdHolder<SlidingButton>,
     pub color_picker: GdHolder<ColorPicker>,
 
     // cached themes
@@ -78,8 +80,10 @@ impl TagLargeCard {
         match try {
             if self.tag.id.is_some() {
                 self.delete_sliding_button.ok_mut()?.bind_mut().slide_in()?;
-                self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_in()?;
+                self.reject_sliding_button.ok_mut()?.bind_mut().slide_in()?;
             }
+            self.accept_sliding_button.ok_mut()?.bind_mut().slide_in()?;
+            self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_in()?;
         } {
             Ok(_) => {},
             Err::<_, BoxedError>(e) => log_error(e),
@@ -114,6 +118,8 @@ impl TagLargeCard {
             }
             self.delete_sliding_button.ok_mut()?.bind_mut().slide_out()?;
             self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+            self.reject_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+            self.accept_sliding_button.ok_mut()?.bind_mut().slide_out()?;
             self.color_picker.ok_mut()?.hide();
         } {
             Ok(_) => {},
@@ -146,6 +152,27 @@ impl TagLargeCard {
     }
 
     #[func]
+    fn reject_changes(&mut self) {
+        match try {
+            self.refresh_display();
+            self.release_focus()?;
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
+    fn on_accept_button_up(&mut self) {
+        match try {
+            self.release_focus()?;
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
     fn on_color_changed(&mut self, color: Color) {
         match try {
             self.tag_large_style_box_flat.set_bg_color(color);
@@ -158,6 +185,8 @@ impl TagLargeCard {
     fn position_buttons(&mut self) -> ArreResult<()> {
         self.position_delete_button()?;
         self.position_bg_color_button()?;
+        self.position_reject_button()?;
+        self.position_accept_button()?;
         self.position_color_picker()?;
         Ok(())
     }
@@ -195,6 +224,41 @@ impl TagLargeCard {
         let shift_y = size.y;
         let new_pos = global_pos + Vector2::new(shift_x, shift_y);
         bg_color_button.set_position(new_pos);
+        Ok(())
+    }
+
+    fn position_reject_button(&mut self) -> ArreResult<()> {
+        // Tag Card references
+        let btn_size = self.name_line_edit.ok()?.get_size().y;
+        let global_pos =  self.get_global_position();
+        let mut reject_button = self.reject_sliding_button.ok_mut()?.bind_mut();
+
+        // Size
+        reject_button.set_size(Vector2::new(btn_size, btn_size))?;
+
+        // Position - to the left, above
+        let shift_x = 0.;
+        let shift_y = -btn_size;
+        let new_pos = global_pos + Vector2::new(shift_x, shift_y);
+        reject_button.set_position(new_pos);
+        Ok(())
+    }
+
+    fn position_accept_button(&mut self) -> ArreResult<()> {
+        // Tag Card references
+        let size = self.get_size();
+        let btn_size = self.name_line_edit.ok()?.get_size().y;
+        let global_pos =  self.get_global_position();
+        let mut accept_button = self.accept_sliding_button.ok_mut()?.bind_mut();
+
+        // Size
+        accept_button.set_size(Vector2::new(btn_size, btn_size))?;
+
+        // Position - to the left, below
+        let shift_x = 0.;
+        let shift_y = size.y;
+        let new_pos = global_pos + Vector2::new(shift_x, shift_y);
+        accept_button.set_position(new_pos);
         Ok(())
     }
 
@@ -244,6 +308,8 @@ impl MarginContainerVirtual for TagLargeCard {
             name_line_edit: GdHolder::default(),
             delete_sliding_button: GdHolder::default(),
             bg_color_sliding_button: GdHolder::default(),
+            reject_sliding_button: GdHolder::default(),
+            accept_sliding_button: GdHolder::default(),
             color_picker: GdHolder::default(),
 
             // cached themes
@@ -301,6 +367,28 @@ impl MarginContainerVirtual for TagLargeCard {
                 actual_button.connect(
                     "button_up".into(),
                     base.callable("on_bg_color_button_up"),
+                );
+            }
+            self.reject_sliding_button = GdHolder::from_path(base, "TopLevel/RejectSlidingButton");
+            {
+                let mut reject_button = self.reject_sliding_button.ok_mut()?.bind_mut();
+                reject_button.set_sliding_direction(SlidingInDirection::Up)?;
+                let actual_button = reject_button.button.ok_mut()?;
+                actual_button.set_tooltip_text("Reject Changes (ESC)".into());
+                actual_button.connect(
+                    "button_up".into(),
+                    base.callable("reject_changes"),
+                );
+            }
+            self.accept_sliding_button = GdHolder::from_path(base, "TopLevel/AcceptSlidingButton");
+            {
+                let mut accept_button = self.accept_sliding_button.ok_mut()?.bind_mut();
+                accept_button.set_sliding_direction(SlidingInDirection::Bottom)?;
+                let actual_button = accept_button.button.ok_mut()?;
+                actual_button.set_tooltip_text("Accept Changes (ENTER)".into());
+                actual_button.connect(
+                    "button_up".into(),
+                    base.callable("on_accept_button_up"),
                 );
             }
             self.color_picker = GdHolder::from_path(base, "TopLevel/ColorPicker");

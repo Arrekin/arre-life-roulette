@@ -7,6 +7,7 @@ use crate::godot_classes::utils::GdHolder;
 pub enum SlidingInDirection {
     Right,
     Bottom,
+    Up,
 }
 
 #[derive(GodotClass)]
@@ -62,7 +63,15 @@ impl SlidingButton {
                     0.to_variant(),
                     0.2,
                 );
-            }
+            },
+            SlidingInDirection::Up => {
+                new_sliding_tween.tween_property(
+                    self.button.ok_shared()?.upcast(),
+                    "position:y".into(),
+                    0.to_variant(),
+                    0.2,
+                );
+            },
         }
 
         new_sliding_tween.play();
@@ -93,13 +102,22 @@ impl SlidingButton {
                     self.get_hiding_offset().y.to_variant(),
                     0.2
                 );
-            }
+            },
+            SlidingInDirection::Up => {
+                new_sliding_tween.tween_property(
+                    self.button.ok_shared()?.upcast(),
+                    "position:y".into(),
+                    self.get_hiding_offset().y.to_variant(),
+                    0.2
+                );
+            },
         }
         new_sliding_tween.play();
         self.sliding_tween = new_sliding_tween.into();
         Ok(())
     }
 
+    /// Get the offset of where the button is no longer visible
     fn get_hiding_offset(&self) -> Vector2 {
         match self.direction {
             SlidingInDirection::Right => {
@@ -107,6 +125,9 @@ impl SlidingButton {
             },
             SlidingInDirection::Bottom => {
                 Vector2::new(0., -self.base.get_size().y)
+            },
+            SlidingInDirection::Up => {
+                Vector2::new(0., self.base.get_size().y)
             }
         }
     }

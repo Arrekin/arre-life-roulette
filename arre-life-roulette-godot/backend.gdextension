@@ -1,5 +1,6 @@
 [configuration]
 entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.1
 
 [libraries]
 linux.x86_64 = "res://../arre-life-roulette-rust/target/debug/libarre_life_roulette_rust.so"
