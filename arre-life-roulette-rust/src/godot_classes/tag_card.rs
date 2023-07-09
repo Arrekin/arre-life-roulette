@@ -3,7 +3,7 @@ use godot::engine::global::{Key, MouseButton};
 use godot::prelude::*;
 use crate::db::DB;
 use crate::errors::{ArreError, ArreResult, BoxedError};
-use crate::godot_classes::resources::TAG_LARGE_STYLE_BOX_FLAT;
+use crate::godot_classes::resources::{TAG_ACCEPT_CHANGES_ICON, TAG_BG_COLOR_ICON, TAG_DELETE_ICON, TAG_LARGE_STYLE_BOX_FLAT, TAG_REJECT_CHANGES_ICON};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::sliding_button::{SlidingButton, SlidingInDirection};
 use crate::godot_classes::utils::{GdHolder};
@@ -351,6 +351,8 @@ impl MarginContainerVirtual for TagLargeCard {
             {
                 let mut delete_button = self.delete_sliding_button.ok_mut()?.bind_mut();
                 delete_button.set_sliding_direction(SlidingInDirection::Right)?;
+                let texture = try_load(TAG_DELETE_ICON).ok_or(ArreError::UnexpectedNone("TagLargeCard::ready[DeleteSlidingButton]".into()))?;
+                delete_button.set_texture(texture)?;
                 let actual_button = delete_button.button.ok_mut()?;
                 actual_button.set_tooltip_text("Delete Tag".into());
                 actual_button.connect(
@@ -362,6 +364,8 @@ impl MarginContainerVirtual for TagLargeCard {
             {
                 let mut bg_color_button = self.bg_color_sliding_button.ok_mut()?.bind_mut();
                 bg_color_button.set_sliding_direction(SlidingInDirection::Bottom)?;
+                let texture = try_load(TAG_BG_COLOR_ICON).ok_or(ArreError::UnexpectedNone("TagLargeCard::ready[DeleteSlidingButton]".into()))?;
+                bg_color_button.set_texture(texture)?;
                 let actual_button = bg_color_button.button.ok_mut()?;
                 actual_button.set_tooltip_text("Pick Background Color".into());
                 actual_button.connect(
@@ -373,6 +377,8 @@ impl MarginContainerVirtual for TagLargeCard {
             {
                 let mut reject_button = self.reject_sliding_button.ok_mut()?.bind_mut();
                 reject_button.set_sliding_direction(SlidingInDirection::Up)?;
+                let texture = try_load(TAG_REJECT_CHANGES_ICON).ok_or(ArreError::UnexpectedNone("TagLargeCard::ready[DeleteSlidingButton]".into()))?;
+                reject_button.set_texture(texture)?;
                 let actual_button = reject_button.button.ok_mut()?;
                 actual_button.set_tooltip_text("Reject Changes (ESC)".into());
                 actual_button.connect(
@@ -384,6 +390,8 @@ impl MarginContainerVirtual for TagLargeCard {
             {
                 let mut accept_button = self.accept_sliding_button.ok_mut()?.bind_mut();
                 accept_button.set_sliding_direction(SlidingInDirection::Bottom)?;
+                let texture = try_load(TAG_ACCEPT_CHANGES_ICON).ok_or(ArreError::UnexpectedNone("TagLargeCard::ready[DeleteSlidingButton]".into()))?;
+                accept_button.set_texture(texture)?;
                 let actual_button = accept_button.button.ok_mut()?;
                 actual_button.set_tooltip_text("Accept Changes (ENTER)".into());
                 actual_button.connect(

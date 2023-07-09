@@ -1,0 +1,6 @@
+[gd_resource type="StyleBoxTexture" load_steps=2 format=3 uid="uid://cblkg32nogs7l"]
+
+[ext_resource type="Texture2D" uid="uid://dkvd12nwx53qi" path="res://Icons/Tags/tag_delete.png" id="1_moil3"]
+
+[resource]
+texture = ExtResource("1_moil3")

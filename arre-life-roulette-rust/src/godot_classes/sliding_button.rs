@@ -1,6 +1,7 @@
-use godot::engine::{Button, Control, ControlVirtual, Tween};
+use godot::engine::{Button, Control, ControlVirtual, StyleBox, StyleBoxTexture, Texture2D, Tween};
 use godot::prelude::*;
 use crate::errors::{ArreError, ArreResult, BoxedError};
+use crate::godot_classes::resources::{SLIDING_BUTTON_STYLE_BOX_NORMAL};
 use crate::godot_classes::singletons::logger::log_error;
 use crate::godot_classes::utils::GdHolder;
 
@@ -19,6 +20,9 @@ pub struct SlidingButton {
     // cached UI elements
     pub button: GdHolder<Button>,
 
+    // cached style boxes
+    pub style_box_normal: Gd<StyleBoxTexture>,
+
     // state
     pub direction: SlidingInDirection,
     sliding_tween: GdHolder<Tween>,
@@ -30,6 +34,11 @@ impl SlidingButton {
     pub fn set_size(&mut self, size: Vector2) -> ArreResult<()> {
         self.base.set_size(size);
         self.button.ok_mut()?.set_size(size);
+        Ok(())
+    }
+
+    pub fn set_texture(&mut self, texture: Gd<Texture2D>) -> ArreResult<()> {
+        self.style_box_normal.set_texture(texture);
         Ok(())
     }
 
@@ -142,6 +151,11 @@ impl ControlVirtual for SlidingButton {
             // cached UI elements
             button: GdHolder::default(),
 
+            // cached themes
+            style_box_normal: load::<StyleBoxTexture>(SLIDING_BUTTON_STYLE_BOX_NORMAL)
+                .duplicate().unwrap()
+                .cast::<StyleBoxTexture>(),
+
             // state
             direction: SlidingInDirection::Right,
             sliding_tween: GdHolder::default(),
@@ -150,12 +164,19 @@ impl ControlVirtual for SlidingButton {
 
     fn ready(&mut self) {
         match try {
+
             let base = &mut self.base;
 
             let mut sliding_tween = base.create_tween().unwrap();
             sliding_tween.stop();
             self.sliding_tween = sliding_tween.into();
             self.button = GdHolder::from_path(base, "Button");
+            {
+                let button = self.button.ok_mut()?;
+                button.add_theme_stylebox_override("normal".into(), self.style_box_normal.share().upcast());
+                button.add_theme_stylebox_override("hover".into(), self.style_box_normal.share().upcast());
+            }
+
             self.set_sliding_direction(SlidingInDirection::Right)?;
         } {
             Ok(_) => {}
