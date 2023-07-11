@@ -76,13 +76,28 @@ impl TagLargeCard {
     }
 
     #[func]
+    fn on_text_changed(&mut self) {
+        match try {
+            let curr_name = self.name_line_edit.ok_mut()?.get_text().to_string();
+            if curr_name == self.tag.name {
+                self.reject_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+                self.accept_sliding_button.ok_mut()?.bind_mut().slide_out()?;
+            } else {
+                self.reject_sliding_button.ok_mut()?.bind_mut().slide_in()?;
+                self.accept_sliding_button.ok_mut()?.bind_mut().slide_in()?;
+            }
+        } {
+            Ok(_) => {},
+            Err::<_, BoxedError>(e) => log_error(e),
+        }
+    }
+
+    #[func]
     fn on_focus_entered(&mut self) {
         match try {
             if self.tag.id.is_some() {
                 self.delete_sliding_button.ok_mut()?.bind_mut().slide_in()?;
-                self.reject_sliding_button.ok_mut()?.bind_mut().slide_in()?;
             }
-            self.accept_sliding_button.ok_mut()?.bind_mut().slide_in()?;
             self.bg_color_sliding_button.ok_mut()?.bind_mut().slide_in()?;
         } {
             Ok(_) => {},
@@ -336,6 +351,10 @@ impl MarginContainerVirtual for TagLargeCard {
                 line_edit.connect(
                     "text_submitted".into(),
                     base.callable("on_text_submitted"),
+                );
+                line_edit.connect(
+                    "text_changed".into(),
+                    base.callable("on_text_changed"),
                 );
                 line_edit.connect(
                     "focus_entered".into(),

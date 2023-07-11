@@ -4,7 +4,7 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_83qkj"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jnw2j"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4nsgg"]
 bg_color = Color(0.945098, 0.898039, 0.027451, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
@@ -25,8 +25,9 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_83qkj")
 [node name="LineEdit" type="LineEdit" parent="PanelContainer"]
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/selection_color = Color(0.14902, 0.14902, 0.14902, 0.682353)
 theme_override_constants/outline_size = 7
-theme_override_styles/normal = SubResource("StyleBoxFlat_jnw2j")
+theme_override_styles/normal = SubResource("StyleBoxFlat_4nsgg")
 text = "Tag Name"
 alignment = 1
 max_length = 64
@@ -48,18 +49,16 @@ offset_bottom = 56.0
 [node name="DeleteSlidingButton" parent="TopLevel" instance=ExtResource("1_x1ot7")]
 layout_mode = 0
 offset_left = 89.0
-offset_top = 0.0
 offset_right = 112.0
-offset_bottom = 23.0
 
 [node name="ColorPicker" type="ColorPicker" parent="TopLevel"]
 visible = false
 top_level = true
 layout_mode = 0
-offset_left = 153.0
-offset_top = 88.0
-offset_right = 411.0
-offset_bottom = 520.0
+offset_left = 89.0
+offset_top = 56.0
+offset_right = 379.0
+offset_bottom = 488.0
 edit_alpha = false
 can_add_swatches = false
 color_modes_visible = false
